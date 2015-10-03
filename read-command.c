@@ -166,9 +166,9 @@ bool_t opp_handle_stacks(stack_t command_stack, stack_t opp_stack){
 }
 
 /*
- *new_line_handle handles new line while reading script
+ *opp_handle_new_lines handles new line while reading script
  */
-bool_t new_line_handle(unsigned int* n_newline, stack_t opp_stack,
+bool_t opp_handle_new_lines(unsigned int* n_newline, stack_t opp_stack,
     stack_t command_stack, command_stream_t m_command_stream){
   if (*n_newline == 1){
     stack_push(opp_stack, ";");
@@ -206,6 +206,7 @@ make_command_stream (int (*get_next_byte) (void *),
 
   unsigned int paren_count = 0; //counts paren
   unsigned int new_line_count = 0; //new line count
+  unsigned int line_number = 1;
   bool_t opp_bool = TRUE; //there was an operator before
   bool_t checked_next = FALSE;
 
@@ -229,7 +230,7 @@ make_command_stream (int (*get_next_byte) (void *),
     checked_next = FALSE;
     switch(curr_byte){
       case '(':
-        if (!new_line_handle(&new_line_count, opp_stack, command_stack, c_trees))
+        if (!opp_handle_new_lines(&new_line_count, opp_stack, command_stack, c_trees))
           return NULL;//TODO ERROR HERE
         stack_push(opp_stack, &"(");
         paren_count++;
@@ -237,7 +238,7 @@ make_command_stream (int (*get_next_byte) (void *),
         break;
       case ')':
         //handling new line
-        if (!new_line_handle(&new_line_count, opp_stack, command_stack, c_trees))
+        if (!opp_handle_new_lines(&new_line_count, opp_stack, command_stack, c_trees))
           return NULL;//TODO ERROR HERE
         if (stack_empty(opp_stack))
           return NULL; // TODO
@@ -262,6 +263,7 @@ make_command_stream (int (*get_next_byte) (void *),
           break;
 
         case '\n':
+          line_number++;
           if (paren_count > 0 || opp_bool)
             break;
           new_line_count++;
@@ -355,7 +357,7 @@ make_command_stream (int (*get_next_byte) (void *),
           }
 
           else{
-            new_line_handle(&new_line_count, opp_stack, command_stack, c_trees); 
+            opp_handle_new_lines(&new_line_count, opp_stack, command_stack, c_trees); 
           }
 
           if (curr_byte == ' ' || curr_byte == '\t'){
