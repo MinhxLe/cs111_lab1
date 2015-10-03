@@ -173,19 +173,16 @@ bool_t new_line_handle(unsigned int* n_newline, stack_t opp_stack,
   if (*n_newline == 1){
     stack_push(opp_stack, ";");
   }
+  //form a new command tree
   else if (*n_newline > 1){ 
-    //form a command tree from what is currently in command stack and command
-    //stream
     while (!stack_empty(opp_stack)){
       if (opp_handle_stacks(command_stack, opp_stack) ==  FALSE)
         return FALSE;
     }
+    //adding the command tree 
     command_t finished_command_tree;
     stack_pop(command_stack, &finished_command_tree);
     command_stream_add(m_command_stream, &finished_command_tree);
-    //TODO: maybe some error handling here
-  }
-
   *n_newline = 0; 
   return TRUE; 
 }
@@ -193,9 +190,6 @@ bool_t new_line_handle(unsigned int* n_newline, stack_t opp_stack,
 bool_t handle_opperators(stack_t command_stack, bool_t opp_bool){
   return (opp_bool || stack_empty(command_stack)) ? FALSE : TRUE;
 }
-
-
-bool_t handle_simple_command(string_t buff, command_t )
 
 
 
