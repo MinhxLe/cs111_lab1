@@ -1,5 +1,6 @@
 // UCLA CS 111 Lab 1 command internals
-
+#ifndef COMMAND_IN_H
+#define COMMAND_IN_H
 enum command_type
   {
     AND_COMMAND,         // A && B
@@ -34,3 +35,5 @@ struct command
     struct command *subshell_command;
   } u;
 };
+#endif
+

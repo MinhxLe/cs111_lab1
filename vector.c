@@ -48,4 +48,3 @@ bool_t vector_remove(vector_t s, size_t index){
 }
 
 
-

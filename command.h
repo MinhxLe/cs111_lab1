@@ -1,5 +1,8 @@
 // UCLA CS 111 Lab 1 command interface
+#ifndef COMMAND_H
+#define COMMAND_H
 
+#include "command-internals.h"
 typedef struct command *command_t;
 typedef struct command_stream *command_stream_t;
 
@@ -23,3 +26,19 @@ void execute_command (command_t, int);
 /* Return the exit status of a command, which must have previously been executed.
    Wait for the command, if it is not already finished.   */
 int command_status (command_t);
+////////PERSONALLY ADDED///////////
+void command_new(command_t m_command, enum command_type t, int stat,char* in, char* out, void * args[2]);
+
+
+void command_stream_new(command_stream_t m_command_stream);
+void command_stream_delete(command_stream_t cs);
+void command_stream_add(command_stream_t s, command_t* c);
+
+enum io{
+ INPUT,
+ OUTPUT,
+};
+void command_set_io(command_t c,char* file,enum io r);
+
+
+#endif

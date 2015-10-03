@@ -1,14 +1,3 @@
 #!/bin/bash
-echo hi >>
-
-
-
-
-test.sh
-
-
-echo hi || 
-
-
-echo test
+echo test || echo blah
 

@@ -51,6 +51,11 @@ int string_find_substring(string_t s, char* str){
 bool_t string_empty(string_t s){
   return s->length == 0;
 }
+void string_clear(string_t s){
+  s->length = 0;
+
+}
+
 //this takes in a pointer and 
 void string_to_cstring(string_t s, char* dest){
   size_t x;

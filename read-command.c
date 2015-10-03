@@ -20,11 +20,19 @@
 #include "stack.h"
 #include "string.h"
 
+
+
+
+
+////////////////////////////////////
 //////COMMAND CONSTRUCTOR///////////
+////////////////////////////////////
+
+
+//creates a new command and stores it in the command_t inputted
 void command_new(command_t m_command, enum command_type t, int stat, 
     char* in, char* out, void * args[2]){
   
-  //TODO: check what type,status, and ioredirection is
   m_command->type = t;
   m_command->status = stat;
   m_command->input = in;
@@ -47,8 +55,16 @@ void command_new(command_t m_command, enum command_type t, int stat,
       m_command->u.subshell_command = (command_t)args[0];
   }
 }
-//TODO DECONSTRUCTOR FOR COMMAND
-//MIGHT NOT NEED TO SINCE NO MALLOCING
+
+//sets command io file
+void command_set_io(command_t c, char* file, enum io r){
+  switch(r){
+    case INPUT:
+      c->input = file;
+    case OUPUT:
+      c->output = file;
+  }
+}
 
 /////////////////////////////////////////////////
 ///////COMMAND STREAM IMPLEMENTATION/////////////
@@ -64,7 +80,7 @@ struct command_stream{
 void command_stream_new(command_stream_t m_command_stream){
   //creating initial command_stream
   m_command_stream->n_commands = 0;
-  m_command_stream->command_trees = malloc(sizeof (struct vector));
+  m_command_stream->command_trees = checked_malloc(sizeof (struct vector));
   vector_new(m_command_stream->command_trees, sizeof(command_t*));
 }
 
@@ -76,6 +92,9 @@ void command_stream_delete(command_stream_t cs){
 void command_stream_add(command_stream_t s, command_t* c){
   vector_set(s->command_trees, s->n_commands, c);
 }
+
+
+
 ///////////////////////////////////////////////
 ////////HELPER FUNCTIONS //////////////////////
 ///////////////////////////////////////////////
@@ -176,6 +195,8 @@ bool_t handle_opperators(stack_t command_stack, bool_t opp_bool){
 }
 
 
+bool_t handle_simple_command(string_t buff, command_t )
+
 
 
 command_stream_t
@@ -183,16 +204,17 @@ make_command_stream (int (*get_next_byte) (void *),
 		     void *get_next_byte_argument)
 {
 
-  unsigned int paren_count = 0;
-  unsigned int new_line_count = 0;
-  bool_t opp_bool = TRUE;
+  unsigned int paren_count = 0; //counts paren
+  unsigned int new_line_count = 0; //new line count
+  bool_t opp_bool = TRUE; //there was an operator before
+
   string_t simple_buffer = malloc(sizeof(struct string));
   string_new(simple_buffer);
   char curr_byte;
-  //command streams
+  //command stream initialization
   command_stream_t c_trees = checked_malloc(sizeof(struct command_stream));
-  
   command_stream_new(c_trees);
+
   //opp and command stack
   stack_t command_stack = checked_malloc(sizeof(struct stack));
   stack_new(command_stack, sizeof(command_t));

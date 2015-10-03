@@ -17,5 +17,7 @@ bool_t vector_get(vector_t s, size_t index, void* dest);
 bool_t vector_remove(vector_t s, size_t index);
 
 
+void vector_clear(vector_t v);
+
 
 #endif
