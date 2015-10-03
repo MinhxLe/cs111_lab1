@@ -32,7 +32,7 @@
 //creates a new command and stores it in the command_t inputted
 void command_new(command_t m_command, enum command_type t, int stat, 
     char* in, char* out, void * args[2]){
-
+  
   m_command->type = t;
   m_command->status = stat;
   m_command->input = in;
@@ -85,7 +85,7 @@ void command_stream_new(command_stream_t m_command_stream){
 }
 
 void command_stream_delete(command_stream_t cs){
-  free(cs->command_trees); 
+ free(cs->command_trees); 
 }
 
 //COPIES
@@ -132,7 +132,7 @@ bool_t opp_handle_stacks(stack_t command_stack, stack_t opp_stack){
   //both of them shouldn't be empty?
   if (stack_empty(command_stack) || stack_empty(opp_stack))
     return FALSE;
-
+  
   command_t commands[2];
   char* opperand;
   command_t dest = malloc(sizeof(struct command));
@@ -185,62 +185,25 @@ bool_t opp_handle_new_lines(unsigned int* n_newline, stack_t opp_stack,
     command_t finished_command_tree;
     stack_pop(command_stack, &finished_command_tree);
     command_stream_add(m_command_stream, &finished_command_tree);
-    *n_newline = 0; 
-    return TRUE; 
-  }
-  //prechecks all things operator related
-  bool_t handle_opperators(stack_t command_stack, bool_t opp_bool){
-    return !(opp_bool || stack_empty(command_stack));
-  }
+  *n_newline = 0; 
+  return TRUE; 
+}
+//prechecks all things operator related
+bool_t handle_opperators(stack_t command_stack, bool_t opp_bool){
+  return !(opp_bool || stack_empty(command_stack));
+}
 
-  // checks to see if a char is an operator
-  bool_t is_operator(char c) {
-    return c != '(' && c != ')' && c != '\n' && c != '#'
-      && c != ';' && c != '|' && c != '&' && c != '>'
-      && c != '<';
-  }
-
-  
-
-  //don't want to use 
-  bool_t handle_simple_commands(string_t buff, command_t s){
-    vector_new(s->u.words, sizeof(char*));
-    size_t start = 0;
-    size_t end = 0;
-    size_t word_count = 0;
-    char c = '\0';
-    for (size_t it = 0; it < buff->length; it++){
-      string_get_char(buff, it, &c);
-      if (c == ' ' || c == '\t'){
-        if (start != end){
-          char* new_string = NULL;
-          string_to_new_cstring(s, new_string,start,end);//creating a new string
-          vector_set(s->u.words, word_count, &new_string);//adding pointer onto command vect
-          word_count++;
-        }
-        while (c == ' ' || c == '\t') { 
-          it++;
-          if (it >= buff->length)//this means we were iterating through white spaces at the end
-            return TRUE;
-          string_get_char(buff, it, &c);
-        }
-        end = start = it;//start of next string
-        it--; //to compensate for incrementing before
-      }
-      else if ('0' <= c <= '9' || 'A' <= c <= 'Z' || 'a' <= c <= 'z' || 
-          c == '!' || c == '%' || c == ',' || c == '-' || c == '/'
-          c == '.' || c == ':' || c == '@' || c == '^' || c == '_')//c is a correct character
-        end++;
-      else
-        return FALSE;
-    }
-    return TRUE;
-  }
+// checks to see if a char is an operator
+bool_t is_operator(char c) {
+  return c != '(' && c != ')' && c != '\n' && c != '#'
+         && c != ';' && c != '|' && c != '&' && c != '>'
+         && c != '<';
+}
 
 
 command_stream_t
 make_command_stream (int (*get_next_byte) (void *),
-         void *get_next_byte_argument)
+		     void *get_next_byte_argument)
 {
 
   unsigned int paren_count = 0; //counts paren
@@ -336,7 +299,7 @@ make_command_stream (int (*get_next_byte) (void *),
           return NULL;
         if ((curr_byte = get_next_byte(get_next_byte_argument) >= 0 && curr_byte == '|')){
           
-         char* c = "NOT (";
+          char* c = "NOT (";
           stack_top(opp_stack, c);
           while (!stack_empty(opp_stack) && strcmp(c, "(") != 0 && precedence(c, "||") > -1){
             opp_handle_stacks(command_stack, opp_stack);
@@ -364,28 +327,28 @@ make_command_stream (int (*get_next_byte) (void *),
         }
         stack_push(opp_stack, &"&&");
         break;
-     case '>': // aside from INPUT and OUTPUT for command_set_io and the fact that > accepts
+      case '>': // aside from INPUT and OUTPUT for command_set_io and the fact that > accepts
                 // '|' in addition to <'s '>' and '&' following the i/o redirect, '>' and '<'
                 // are essentially the same
         curr_byte = get_next_byte(get_next_byte_argument);
         if (curr_byte >= 0 && (curr_byte == '>' || curr_byte == '&' || curr_byte == '|')) {
-         curr_byte = get_next_byte(get_next_byte_argument);
+          curr_byte = get_next_byte(get_next_byte_argument);
         }
         else if (curr_byte < 0)
-          return NULL; 
+          return NULL;
 
         // remove extra whitespace
         while (curr_byte == ' ' || curr_byte == '\t') {
           curr_byte = get_next_byte(get_next_byte_argument);
         }
 
-       while (!is_operator(curr_byte)) {
+        while (!is_operator(curr_byte)) {
           string_append_char(simple_buffer, curr_byte);
           curr_byte = get_next_byte(get_next_byte_argument);
         }
         checked_next = TRUE;
 
-       string_append_char(simple_buffer, '\0');
+        string_append_char(simple_buffer, '\0');
         
         command_t com;
         stack_pop(command_stack, &com);
@@ -396,7 +359,7 @@ make_command_stream (int (*get_next_byte) (void *),
         stack_push(command_stack, &com);
 
         break;
-     case '<':
+      case '<':
         curr_byte = get_next_byte(get_next_byte_argument);
         if (curr_byte >= 0 && (curr_byte == '>' || curr_byte == '&')) {
           curr_byte = get_next_byte(get_next_byte_argument);
@@ -451,21 +414,23 @@ make_command_stream (int (*get_next_byte) (void *),
         break;
       } //switch
     } //while
+  
+  
 
-    string_delete(simple_buffer);
-    free(simple_buffer);
-    stack_delete(command_stack);
-    free(command_stack);
-    stack_delete(opp_stack);
-    free(opp_stack);
-
-    return 0;
-  }
+  string_delete(simple_buffer);
+  free(simple_buffer);
+  stack_delete(command_stack);
+  free(command_stack);
+  stack_delete(opp_stack);
+  free(opp_stack);
+  
+  return 0;
+}
 
 command_t
-  read_command_stream (command_stream_t s)
-  {
-    /* FIXME: Replace this with your implementation too.  */
-    error (1, 0, "command reading not yet implemented");
-    return 0;
-  }
+read_command_stream (command_stream_t s)
+{
+  /* FIXME: Replace this with your implementation too.  */
+  error (1, 0, "command reading not yet implemented");
+  return 0;
+}
