@@ -47,4 +47,6 @@ bool_t vector_remove(vector_t s, size_t index){
   return TRUE;
 }
 
-
+void vector_get_elements(vector_t v, void* start){
+  start = v->elements;
+}

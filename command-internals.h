@@ -23,13 +23,13 @@ struct command
   char *input;
   char *output;
 
-  union
+union
   {
     // for AND_COMMAND, SEQUENCE_COMMAND, OR_COMMAND, PIPE_COMMAND:
     struct command *command[2];
 
     // for SIMPLE_COMMAND:
-    char **word;
+    vector_t words;
 
     // for SUBSHELL_COMMAND:
     struct command *subshell_command;
