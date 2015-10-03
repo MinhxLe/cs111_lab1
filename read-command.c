@@ -188,9 +188,15 @@ bool_t new_line_handle(unsigned int* n_newline, stack_t opp_stack,
 }
 //prechecks all things operator related
 bool_t handle_opperators(stack_t command_stack, bool_t opp_bool){
-  return (opp_bool || stack_empty(command_stack)) ? FALSE : TRUE;
+  return !(opp_bool || stack_empty(command_stack));
 }
 
+// checks to see if a char is an operator
+bool_t is_operator(char c) {
+  return c != '(' && c != ')' && c != '\n' && c != '#'
+         && c != ';' && c != '|' && c != '&' && c != '>'
+         && c != '<';
+}
 
 
 command_stream_t
@@ -201,10 +207,11 @@ make_command_stream (int (*get_next_byte) (void *),
   unsigned int paren_count = 0; //counts paren
   unsigned int new_line_count = 0; //new line count
   bool_t opp_bool = TRUE; //there was an operator before
+  bool_t checked_next = FALSE;
 
   string_t simple_buffer = malloc(sizeof(struct string));
   string_new(simple_buffer);
-  char curr_byte;
+  char curr_byte = 0;
   //command stream initialization
   command_stream_t c_trees = checked_malloc(sizeof(struct command_stream));
   command_stream_new(c_trees);
@@ -216,7 +223,10 @@ make_command_stream (int (*get_next_byte) (void *),
   stack_t opp_stack = checked_malloc(sizeof(struct stack));
   stack_new(command_stack, sizeof(char*));
 
-  while ((curr_byte = get_next_byte(get_next_byte_argument))>= 0){
+  while (curr_byte >= 0){
+    if (!checked_next)
+      curr_byte = get_next_byte(get_next_byte_argument);
+    checked_next = FALSE;
     switch(curr_byte){
       case '(':
         if (!new_line_handle(&new_line_count, opp_stack, command_stack, c_trees))
@@ -292,7 +302,7 @@ make_command_stream (int (*get_next_byte) (void *),
           }
           else{
 
-            //TODO WE NEED A WAY TO PUSH THAT CHARACTER BACK 
+            checked_next = TRUE;
             stack_push(opp_stack, &"|");
           
           } 
@@ -310,7 +320,33 @@ make_command_stream (int (*get_next_byte) (void *),
           stack_push(opp_stack, &"&&");
           break;
         case '>':
+          curr_byte = get_next_byte(get_next_byte_argument);
+          if (curr_byte >= 0 && (curr_byte == '>' || curr_byte == '&' || curr_byte == '|')) {
+            curr_byte = get_next_byte(get_next_byte_argument);
+          }
+
+          while (curr_byte == ' ' || curr_byte == '\t') {
+            curr_byte = get_next_byte(get_next_byte_argument);
+          }
+
+          while (!is_operator(curr_byte)) {
+            string_append_char(simple_buffer, curr_byte);
+            curr_byte = get_next_byte(get_next_byte_argument);
+          }
+          checked_next = TRUE;
+
+          string_append_char(simple_buffer, '\0');
+          
+          command_t com;
+          stack_pop(command_stack, &com);
+
+          // TODO: finish setting the input of com
+
+          stack_push(command_stack, &com);
+
+          break;
         case '<':
+          break;
         default:
           if (opp_bool){ 
             new_line_count = 0;
