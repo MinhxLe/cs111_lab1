@@ -166,9 +166,9 @@ bool_t opp_handle_stacks(stack_t command_stack, stack_t opp_stack){
 }
 
 /*
- *handle_new_lines handles new line while reading script
+ *opp_handle_new_lines handles new line while reading script
  */
-bool_t handle_new_lines(unsigned int* n_newline, stack_t opp_stack,
+bool_t opp_handle_new_lines(unsigned int* n_newline, stack_t opp_stack,
     stack_t command_stack, command_stream_t m_command_stream){
   if (*n_newline == 1){
     stack_push(opp_stack, ";");
@@ -267,7 +267,7 @@ bool_t handle_new_lines(unsigned int* n_newline, stack_t opp_stack,
         checked_next = FALSE;
         switch(curr_byte){
           case '(':
-            if (!handle_new_lines(&new_line_count, opp_stack, command_stack, c_trees))
+            if (!opp_handle_new_lines(&new_line_count, opp_stack, command_stack, c_trees))
               return NULL;//TODO ERROR HERE
             stack_push(opp_stack, &"(");
             paren_count++;
@@ -275,7 +275,7 @@ bool_t handle_new_lines(unsigned int* n_newline, stack_t opp_stack,
             break;
           case ')':
             //handling new line
-            if (!handle_new_lines(&new_line_count, opp_stack, command_stack, c_trees))
+            if (!opp_handle_new_lines(&new_line_count, opp_stack, command_stack, c_trees))
               return NULL;//TODO ERROR HERE
             if (stack_empty(opp_stack))
               return NULL; // TODO
@@ -394,7 +394,7 @@ bool_t handle_new_lines(unsigned int* n_newline, stack_t opp_stack,
             }
 
             else{
-              handle_new_lines(&new_line_count, opp_stack, command_stack, c_trees); 
+              opp_handle_new_lines(&new_line_count, opp_stack, command_stack, c_trees); 
             }
 
             if (curr_byte == ' ' || curr_byte == '\t'){
