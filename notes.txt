@@ -1,0 +1,31 @@
+///PSEUDOCODE FOR RECURSIVE PARSING///
+
+command_t rec(str, start, end, line_err){
+  #
+  ()
+  |
+  &&/||
+  ; /n
+  simple
+
+
+
+
+}
+
+
+
+((    ))
+
+
+()
+()
+
+
+(
+
+
+
+
+
+())

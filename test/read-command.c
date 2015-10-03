@@ -3,6 +3,7 @@
 #include "command.h"
 #include "command-internals.h"
 
+
 ////////////////////////////////////////////
 //             INCLUDE FILES         ///////
 ////////////////////////////////////////////
@@ -15,10 +16,185 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "declarations.h"
-#include "vector.h"
-#include "stack.h"
-#include "string.h"
+
+#define FALSE 0
+#define TRUE 1
+typedef unsigned short bool_t;
+////////////////////////////////////////////
+////////VECTOR CLASS IMPLEMENTATION ////////
+////////////////////////////////////////////
+typedef struct vector* vector_t;
+struct vector{
+  size_t ELEMENT_SIZE; // in bytes
+  size_t n_elements;
+  size_t N_MAX_ELEMENTS;
+  void* elements;
+};
+
+void vector_new(vector_t s, size_t es){
+  s->ELEMENT_SIZE = es;
+  s->n_elements = 0;//not really important, just signifies theright most element that has been changed
+  s->N_MAX_ELEMENTS = 8;
+  s->elements = (void*)checked_malloc(es * s->N_MAX_ELEMENTS);
+}
+
+void vector_delete(vector_t s){
+  free(s->elements);
+}
+
+
+void vector_set(vector_t s, size_t index, void* source){
+  while (index >= s->N_MAX_ELEMENTS){
+    s->N_MAX_ELEMENTS *= 2; 
+    s->elements = (void*)checked_realloc(s->elements, s->ELEMENT_SIZE * s->N_MAX_ELEMENTS);
+  }
+  void* offset = (void*)((char*)s->elements + index*s->ELEMENT_SIZE); //converting to byte size for (char*)
+  memcpy(offset, source, s->ELEMENT_SIZE);
+  s->n_elements = index + 1;
+}
+
+int vector_get(vector_t s, size_t index, void* dest){
+  if (index < s->n_elements){//not a very good check
+    void* offset = (void*)((char*)s->elements + index*s->ELEMENT_SIZE); //converting to byte size for (char*)
+    memcpy(dest, offset, s->ELEMENT_SIZE);
+    return 1;
+  }
+  return 0;
+}
+
+
+unsigned int vector_remove(vector_t s, size_t index){
+  if (index >= s->n_elements)
+    return 0;
+  else if (index == s->N_MAX_ELEMENTS - 1)
+    s->N_MAX_ELEMENTS -= 1;
+  else{
+    char* offset = ((char*)s->elements + index*s->ELEMENT_SIZE); //converting to byte size
+    memcpy((void*)offset, (void*)(offset + s->ELEMENT_SIZE), (s->n_elements-1 - index)*s->ELEMENT_SIZE);  
+    s->n_elements -= 1;    
+  }
+  return 1;
+}
+
+
+////////////////////////////////////////////
+////////   STACK IMPLEMENTATION    /////////
+////////////////////////////////////////////
+typedef struct stack* stack_t;
+struct stack{
+  vector_t v_stack;
+  size_t n_elements;
+};
+
+void stack_new(stack_t s, size_t element_size){
+  s->n_elements = 0;
+  s->v_stack = (vector_t)checked_malloc(sizeof(struct vector));
+  vector_new(s->v_stack, element_size);
+}
+
+
+
+void stack_delete(stack_t s){
+  vector_delete(s->v_stack);
+  free(s->v_stack);
+}
+
+int stack_pop(stack_t s, void* dest){
+  if (s->n_elements == 0)
+    return 0;
+  
+  s->n_elements--;
+  vector_get(s->v_stack, s->n_elements, dest); //returns the pointer
+  vector_remove(s->v_stack, s->n_elements); 
+  return 1;
+}
+
+void stack_push(stack_t s, void* item){
+  vector_set(s->v_stack, s->n_elements, item);
+  s->n_elements++;
+}
+
+bool_t stack_top(stack_t s, void* dest){
+  if (s->n_elements == 0)
+    return FALSE;
+  return vector_get(s->v_stack, s->n_elements-1, dest);
+}
+
+bool_t stack_empty(stack_t s){
+  return (s->n_elements == 1);
+}
+
+////////////////////////////////////////////
+////////   STRING IMPLEMENTATION    ////////
+////////////////////////////////////////////
+
+
+typedef struct string* string_t;
+struct string{
+  size_t length;
+  vector_t v_string;
+};
+
+void string_new(string_t s){
+  s->length = 0;
+  s->v_string = (vector_t)checked_malloc(sizeof(struct vector));
+  vector_new(s->v_string,sizeof(char));
+}
+void string_new_cstring(string_t s, char* str){
+  s->length = 0;
+  s->v_string = (vector_t) checked_malloc(sizeof(struct vector));
+  vector_new(s->v_string,sizeof(char));
+
+  while (str[s->length] != '\0'){
+    vector_set(s->v_string, s->length, str + s->length);
+    s->length++;
+  }
+}
+
+void string_delete(string_t s){
+  vector_delete(s->v_string);
+  free(s->v_string);
+}
+
+
+void string_append(string_t s, char* str){
+  int counter = 0;
+  while (str[counter] != '\0'){
+    vector_set(s->v_string, s->length, str + counter);
+    s->length++;
+    counter++;
+  }
+}
+//TODO CHECK THIS
+void string_append_char(string_t s, char ch){
+  vector_set(s->v_string, s->length, &ch);
+  s->length++;
+}
+
+
+
+int string_find_substring(string_t s, char* str){
+  //TODO
+  return -1;
+}
+
+//this takes in a pointer and 
+void string_to_cstring(string_t s, char* dest){
+  size_t x;
+  for (x = 0; x < s->length; x++)
+    vector_get(s->v_string,x, dest+x);
+  dest[x] = '\0';//setting null byte
+}
+
+void cstring_to_string(string_t dest, char* source){
+  dest->length= 0; //clearing string
+  while (source[dest->length] != '\0'){
+    vector_set(dest->v_string, dest->length, source+dest->length);
+    dest->length++;
+  }
+}
+  
+
 
 //////COMMAND CONSTRUCTOR///////////
 void command_new(command_t m_command, enum command_type t, int stat, 
@@ -79,48 +255,22 @@ void command_stream_add(command_stream_t s, command_t* c){
 ///////////////////////////////////////////////
 ////////HELPER FUNCTIONS //////////////////////
 ///////////////////////////////////////////////
-/*
- * Compares the precedence two operators
- * Returns 1  if precedence(opp1) > precedence(opp2)
- * Returns 0  if precedence(opp1) = precedence(opp2)
- * Returns -1 if precedence(opp1) < precedence(opp2)
- */
-int precedence(char* opp1, char* opp2) {
-  if (strcmp(opp1, "|") == 0) {
-    if (strcmp(opp2, "|") == 0)
-      return 0;
-    return 1; // | has the highest precedence
-  }
-  else if (strcmp(opp1, "&&") == 0 || strcmp(opp1, "||") == 0) {
-    if (strcmp(opp2, "|") == 0)
-      return -1;
-    else if (strcmp(opp2, "&&") == 0 || strcmp(opp2, "||") == 0)
-      return 0;
-    return 1;
-  }
-  else { // opp1 = ;
-    if (strcmp(opp2, ";") == 0)
-      return 0;
-    return -1;
-  }
-}
 
 /*
  *pops 2 commnad from command stack, and creates a new command and
  *combines with popped stack, pushes them onto stack
  */
-bool_t opp_handle_stacks(stack_t command_stack, stack_t opp_stack){
+bool_t opp_pop_from_stack(stack_t command_stack, stack_t opp_stack){
   //both of them shouldn't be empty?
   if (stack_empty(command_stack) || stack_empty(opp_stack))
     return FALSE;
   
   command_t commands[2];
   char* opperand;
-  command_t dest = malloc(sizeof(struct command));
   stack_pop(command_stack, commands);
   stack_pop(command_stack, commands+1);
-  stack_pop(opp_stack, &opperand); 
-  // valid becaues you're just setting opperand to point to the popped cstring 
+  stack_pop(opp_stack, &opperand);
+  command_t dest = checked_malloc(sizeof(struct command)); 
   if (strcmp(opperand, "&&") == 0){
     //TODO: what is status
     command_new(dest, AND_COMMAND, -1, NULL, NULL, (void*)commands);  
@@ -141,8 +291,6 @@ bool_t opp_handle_stacks(stack_t command_stack, stack_t opp_stack){
     return FALSE;
   }
   stack_push(command_stack, &dest);
-
-  //stack_push(command_stack, &dest);
   return TRUE;
 }
 
@@ -158,7 +306,7 @@ bool_t new_line_handle(unsigned int* n_newline, stack_t opp_stack,
     //form a command tree from what is currently in command stack and command
     //stream
     while (!stack_empty(opp_stack)){
-      if (opp_handle_stacks(command_stack, opp_stack) ==  FALSE)
+      if (opp_pop_from_stack(command_stack, opp_stack) ==  FALSE)
         return FALSE;
     }
     command_t finished_command_tree;
@@ -182,7 +330,6 @@ command_stream_t
 make_command_stream (int (*get_next_byte) (void *),
 		     void *get_next_byte_argument)
 {
-
   unsigned int paren_count = 0;
   unsigned int new_line_count = 0;
   bool_t opp_bool = TRUE;
@@ -201,130 +348,10 @@ make_command_stream (int (*get_next_byte) (void *),
   stack_new(command_stack, sizeof(char*));
 
   while ((curr_byte = get_next_byte(get_next_byte_argument))>= 0){
-    switch(curr_byte){
-      case '(':
-        if (!new_line_handle(&new_line_count, opp_stack, command_stack, c_trees))
-          return NULL;//TODO ERROR HERE
-        stack_push(opp_stack, &"(");
-        paren_count++;
-        opp_bool = TRUE;
-        break;
-      case ')':
-        //handling new line
-        if (!new_line_handle(&new_line_count, opp_stack, command_stack, c_trees))
-          return NULL;//TODO ERROR HERE
-        if (stack_empty(opp_stack))
-          return NULL; // TODO
-        char* temp;
-        stack_top(opp_stack, temp);
-        while (strcmp(temp, "(") != 0){
-          if (!opp_handle_stacks(command_stack, opp_stack))
-            return NULL;
-          stack_top(opp_stack, temp);
-        }
-          //popping top off which is (
-          stack_pop(opp_stack, &temp);
-          paren_count--;
-          opp_bool = FALSE;
+    return NULL;
+  }
 
-          //the top of command stack will be the subshell command
-          command_t new_subshell_command = malloc(sizeof(struct command));
-          command_t subshell_command;
-          stack_pop(command_stack, &subshell_command);
-          command_new(new_subshell_command, SUBSHELL_COMMAND, -1, NULL, NULL, (void*)&subshell_command);
-          stack_push(command_stack, &new_subshell_command);  
-          break;
 
-        case '\n':
-          if (paren_count > 0 || opp_bool)
-            break;
-          new_line_count++;
-          break;
-        case '#':
-          while ((curr_byte = get_next_byte(get_next_byte_argument))>= 0 && 
-               curr_byte != '\n')
-             continue;
-          if (paren_count > 0 || opp_bool)
-            break;
-          new_line_count++;
-          break;
-        case ';':
-          if (!handle_opperators(command_stack, opp_bool))
-            return NULL; 
-          char* c = "NOT (";
-          stack_top(opp_stack, c);
-          while (!stack_empty(opp_stack) && strcmp(c, "(") != 0 && precedence(c, ";") > -1){
-            opp_handle_stacks(command_stack, opp_stack);
-            stack_top(opp_stack, c);
-          }
-          stack_push(opp_stack, &";");
-
-          opp_bool = TRUE;
-          break;
-        case '|':
-          if (!handle_opperators(command_stack, opp_bool))
-            return NULL;
-          if ((curr_byte = get_next_byte(get_next_byte_argument) >= 0 && curr_byte == '|')){
-            
-            char* c = "NOT (";
-            stack_top(opp_stack, c);
-            while (!stack_empty(opp_stack) && strcmp(c, "(") != 0 && precedence(c, ";") > -1){
-            opp_handle_stacks(command_stack, opp_stack);
-            stack_top(opp_stack, c);
-            }
-            stack_push(opp_stack, &"||");
-          }
-          else{
-
-            //TODO WE NEED A WAY TO PUSH THAT CHARACTER BACK 
-            stack_push(opp_stack, &"|");
-          
-          } 
-          opp_bool = TRUE;
-          break;
-        case '&':
-          if (!handle_opperators(command_stack, opp_bool))
-            return NULL;
-          if ((curr_byte = get_next_byte(get_next_byte_argument) >= 0 && curr_byte == '&'))
-            return NULL;
-          while (!stack_empty(opp_stack) && strcmp(c, "(") != 0 && precedence(c, "&&") > -1){
-            opp_handle_stacks(command_stack, opp_stack);
-            stack_top(opp_stack, c);
-          }
-          stack_push(opp_stack, &"&&");
-          break;
-        case '>':
-        case '<':
-        default:
-          if (opp_bool){ 
-            new_line_count = 0;
-            if (curr_byte == ' ' || curr_byte == '\t')
-              break;
-          }
-
-          else{
-            new_line_handle(&new_line_count, opp_stack, command_stack, c_trees); 
-          }
-
-          if (curr_byte == ' ' || curr_byte == '\t'){
-            if (string_empty(simple_buffer))
-              break;
-            else{ 
-              string_append_char(simple_buffer, '\0');
-            }
-          }
-          else{ 
-              string_append_char(simple_buffer, curr_byte);
-              opp_bool = FALSE;
-          }
-          break;
-          
-          
-          
-          
-      }//switch
-    }//while
-  
   
 
   string_delete(simple_buffer);
@@ -334,6 +361,10 @@ make_command_stream (int (*get_next_byte) (void *),
   stack_delete(opp_stack);
   free(opp_stack);
   
+  //do we need to free a malloced command stream
+
+  //error (1, 0, "command reading not yet implemented");
+
   return 0;
 }
 

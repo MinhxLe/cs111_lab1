@@ -45,6 +45,9 @@ main (int argc, char **argv)
   if (optind != argc - 1)
     usage ();
 
+  //reading commands from a file into a data struct of command_stream_t type
+  //think of it as parsing the file and seperating each command into command_t
+  //type and putting it ina command_stream_t
   script_name = argv[optind];
   FILE *script_stream = fopen (script_name, "r");
   if (! script_stream)
@@ -54,6 +57,8 @@ main (int argc, char **argv)
 
   command_t last_command = NULL;
   command_t command;
+
+  //now we print out the command_t for every command?j
   while ((command = read_command_stream (command_stream)))
     {
       if (print_tree)

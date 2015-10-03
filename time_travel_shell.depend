@@ -1,0 +1,32 @@
+# depslib dependency file v1.0
+1326137780 source:/home/minh/School/cs111/labs/lab1-Skeleton/alloc.c
+	"alloc.h"
+	<error.h>
+	<errno.h>
+	<stdlib.h>
+
+1326137780 /home/minh/School/cs111/labs/lab1-Skeleton/alloc.h
+	<stddef.h>
+
+1443301924 source:/home/minh/School/cs111/labs/lab1-Skeleton/execute-command.c
+	"command.h"
+	"command-internals.h"
+	<error.h>
+
+1443304045 /home/minh/School/cs111/labs/lab1-Skeleton/command.h
+
+1443304046 /home/minh/School/cs111/labs/lab1-Skeleton/command-internals.h
+
+1443293488 source:/home/minh/School/cs111/labs/lab1-Skeleton/main.c
+	<errno.h>
+	<error.h>
+	<getopt.h>
+	<stdio.h>
+	"command.h"
+
+1443293056 source:/home/minh/School/cs111/labs/lab1-Skeleton/print-command.c
+	"command.h"
+	"command-internals.h"
+	<stdio.h>
+	<stdlib.h>
+
