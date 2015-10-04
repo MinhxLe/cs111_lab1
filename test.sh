@@ -1,1 +1,1 @@
-asdfasdflogic
+echo blah || echo nyes

@@ -172,7 +172,7 @@ bool_t opp_handle_stacks(stack_t command_stack, stack_t opp_stack){
 bool_t opp_handle_new_lines(unsigned int* n_newline, stack_t opp_stack,
     stack_t command_stack, command_stream_t m_command_stream,  bool_t* opp_bool){
   if (*n_newline == 1){
-    stack_push(opp_stack, &";");
+    stack_push(opp_stack, ";");
     *opp_bool = TRUE;
   }
   //form a new command tree
@@ -398,7 +398,6 @@ make_command_stream (int (*get_next_byte) (void *),
       unsigned int word_count = 0;
       //keep reading in character into simple buffer
       while ((curr_byte = get_next_byte(get_next_byte_argument)) != EOF){
-        printf("\n%c", curr_byte);
         continue;
         if (!curr_whitespace && (curr_byte == ' ' || curr_byte == '\t')){
           //push a null byte
@@ -439,12 +438,25 @@ make_command_stream (int (*get_next_byte) (void *),
   return c_trees;
 }
 
+void print_command_stream(command_stream_t t){
+  printf("%d", t->n_commands);
+  command_t c;
+  vector_get(t->command_trees, 0, &c);
+  switch (c->type){
+    case SIMPLE_COMMAND:
+      printf("YES");
+      break;
+    default:
+      break;
+     
+  }
+}
+
 
 
   command_t
 read_command_stream (command_stream_t s)
 {
-
 
   /* FIXME: Replace this with your implementation too.  */
   error (1, 0, "command reading not yet implemented");

@@ -41,4 +41,5 @@ enum io{
 void command_set_io(command_t c,char* file,enum io r);
 
 
+void print_command_stream(command_stream_t t);
 #endif
