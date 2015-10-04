@@ -226,22 +226,30 @@ bool_t is_command_char(char c){
 bool_t handle_simple_commands(string_t buff, command_t* s, unsigned int wc){
   char** word = checked_malloc(sizeof (char*) * wc);
   *s = checked_malloc(sizeof (struct command));
-  command_new (*s, SIMPLE_COMMAND, -1, NULL, NULL,(void*)word); 
+  command_new (*s, SIMPLE_COMMAND, -1, NULL, NULL,(void*)&word);
+  //printf("%d\n", word);
+  //printf(*s->u.word);
   size_t start = 0;
   size_t end = 0;
   size_t word_count = 0;
   char c = '\0';
+  //printf("%d\n", buff->length);
   for (size_t it = 0; it < buff->length; it++){
     string_get_char(buff, it, &c);
+    //printf("%d\n", c);
+    //printf("%d\n", buff->length);
     if (c == '\0'){
-      string_to_new_cstring(buff, word[word_count],start,end);//creating a new string
+      string_to_new_cstring(buff, &word[word_count],start,end);//creating a new string
+      //printf(word[word_count]);
       word_count++;
-      end = start = end+1;
+      start = end + 1;
+      end = start;
+      //printf("%d\n", start);
     }
     else
       end++;
   }
-  
+   
   //printf("%d\n", s);
   return TRUE;
 }
@@ -400,7 +408,7 @@ make_command_stream (int (*get_next_byte) (void *),
       //creating file out of buffer
       char* f = NULL;
       //pls
-      string_to_new_cstring(simple_buffer, f, 0, simple_buffer->length);
+      string_to_new_cstring(simple_buffer, &f, 0, simple_buffer->length);
       if (current == '>')   
         command_set_io(com, f, OUTPUT);
       else
@@ -415,8 +423,7 @@ make_command_stream (int (*get_next_byte) (void *),
       bool_t curr_whitespace = TRUE;
       unsigned int word_count = 0;
       //keep reading in character into simple buffer
-      while ((curr_byte = get_next_byte(get_next_byte_argument)) != EOF){
-        continue;
+      do{
         if (!curr_whitespace && (curr_byte == ' ' || curr_byte == '\t')){
           //push a null byte
           word_count++;
@@ -424,6 +431,7 @@ make_command_stream (int (*get_next_byte) (void *),
           curr_whitespace = TRUE;
         }
         else {
+          //printf("%c\n", curr_byte);
           curr_whitespace = FALSE; 
           if (is_command_char(curr_byte)){
             string_append_char(simple_buffer, curr_byte);
@@ -436,11 +444,11 @@ make_command_stream (int (*get_next_byte) (void *),
           else
             fprintf(stderr, "%dFUCK YOU", line_number);  
         }
-      }
+      }while ((curr_byte = get_next_byte(get_next_byte_argument))!= EOF);
       //adding simple command
       command_t simple;
-
       handle_simple_commands(simple_buffer,&simple,  word_count);
+      //printf("%d\n", simple->u.word[1]);
       stack_push(command_stack, &simple);
       command_t test;
       stack_top(command_stack, &test);
@@ -478,7 +486,8 @@ void print_command_stream(command_stream_t t){
   command_t c;
   vector_get(t->command_trees, 0, &c);
   //print_command(c);
-  printf("%d", t->command_trees->n_elements); 
+  printf(c->u.word[1]);
+  /*
   switch (c->type){
     case SIMPLE_COMMAND:
     case AND_COMMAND:
@@ -493,7 +502,7 @@ void print_command_stream(command_stream_t t){
       break;
      
   }
- 
+ */
 }
 
 
