@@ -1,1 +1,1 @@
-echo blah || echo nyes
+echo blah

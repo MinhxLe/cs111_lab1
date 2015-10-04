@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "alloc.h"
+
+#include <stdio.h>
 void vector_new(vector_t s, size_t es){
   s->ELEMENT_SIZE = es;
   s->n_elements = 0;//not really important, just signifies theright most element that has been changed
@@ -41,7 +43,7 @@ bool_t vector_remove(vector_t s, size_t index){
     s->N_MAX_ELEMENTS -= 1;
   else{
     char* offset = ((char*)s->elements + index*s->ELEMENT_SIZE); //converting to byte size
-    memcpy((void*)offset, (void*)(offset + s->ELEMENT_SIZE), (s->n_elements-1 - index)*s->ELEMENT_SIZE);  
+    memcpy((void*)&offset, (void*)(offset + s->ELEMENT_SIZE), (s->n_elements-1 - index)*s->ELEMENT_SIZE);  
     s->n_elements -= 1;    
   }
   return TRUE;

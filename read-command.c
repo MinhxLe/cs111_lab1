@@ -81,7 +81,7 @@ void command_stream_new(command_stream_t m_command_stream){
   //creating initial command_stream
   m_command_stream->n_commands = 0;
   m_command_stream->command_trees = checked_malloc(sizeof (struct vector));
-  vector_new(m_command_stream->command_trees, sizeof(command_t*));
+  vector_new(m_command_stream->command_trees, sizeof(command_t));
 }
 
 void command_stream_delete(command_stream_t cs){
@@ -166,6 +166,24 @@ bool_t opp_handle_stacks(stack_t command_stack, stack_t opp_stack){
   return TRUE;
 }
 
+bool_t create_new_command_tree(stack_t command_stack, stack_t opp_stack,
+    command_stream_t m_command_stream){
+    while (!stack_empty(opp_stack)){
+      if (opp_handle_stacks(command_stack, opp_stack) ==  FALSE)
+        return FALSE;
+    }
+  //adding the command tree 
+  command_t finished_command_tree;
+  stack_pop(command_stack, &finished_command_tree);
+  
+  if (!stack_empty(command_stack))
+    return FALSE;
+
+  command_stream_add(m_command_stream, &finished_command_tree);
+  return TRUE;
+}
+
+
 /*
  *opp_handle_new_lines handles new line while reading script
  */
@@ -181,16 +199,11 @@ bool_t opp_handle_new_lines(unsigned int* n_newline, stack_t opp_stack,
       if (opp_handle_stacks(command_stack, opp_stack) ==  FALSE)
         return FALSE;
     }
+    if (!create_new_command_tree(command_stack, opp_stack, m_command_stream))
+      return FALSE;
   }
-  //adding the command tree 
-  command_t finished_command_tree;
-  stack_pop(command_stack, &finished_command_tree);
-  
-  if (!stack_empty(command_stack))
-    return FALSE;
-
-  command_stream_add(m_command_stream, &finished_command_tree);
   *n_newline = 0; 
+
   return TRUE; 
 }
 //prechecks all things operator related
@@ -210,11 +223,10 @@ bool_t is_command_char(char c){
     c == '.' || c == ':' || c == '@' || c == '^' || c == '_';
 }
 
-bool_t handle_simple_commands(string_t buff, command_t s, unsigned int wc){
+bool_t handle_simple_commands(string_t buff, command_t* s, unsigned int wc){
   char** word = checked_malloc(sizeof (char*) * wc);
-  s = checked_malloc(sizeof (struct command)); 
-  command_new (s, SIMPLE_COMMAND, -1, NULL, NULL,(void*)word); 
-
+  *s = checked_malloc(sizeof (struct command));
+  command_new (*s, SIMPLE_COMMAND, -1, NULL, NULL,(void*)word); 
   size_t start = 0;
   size_t end = 0;
   size_t word_count = 0;
@@ -229,6 +241,8 @@ bool_t handle_simple_commands(string_t buff, command_t s, unsigned int wc){
     else
       end++;
   }
+  
+  //printf("%d\n", s);
   return TRUE;
 }
 //handles most* opperators
@@ -423,13 +437,30 @@ make_command_stream (int (*get_next_byte) (void *),
             fprintf(stderr, "%dFUCK YOU", line_number);  
         }
       }
-      command_t simple = NULL;
-      handle_simple_commands(simple_buffer,simple,  word_count);
+      //adding simple command
+      command_t simple;
+
+      handle_simple_commands(simple_buffer,&simple,  word_count);
       stack_push(command_stack, &simple);
+      command_t test;
+      stack_top(command_stack, &test);
     }
 
   } //while
+  //CHECK IF THERE IS ANYTHING ON COMMAND STACK
   
+  //NOT EXACTLY RIGHT
+  if (!stack_empty(command_stack)){
+    command_t test;
+    stack_top(command_stack, &test);
+    if(!create_new_command_tree(command_stack, opp_stack,c_trees))
+        
+        fprintf(stderr, "%dFUCK YOU", line_number);
+  }
+
+
+
+
   string_delete(simple_buffer);
   free(simple_buffer);
   
@@ -443,17 +474,26 @@ make_command_stream (int (*get_next_byte) (void *),
 }
 
 void print_command_stream(command_stream_t t){
-  printf("%d", t->n_commands);
+  //printf("%d", t->n_commands);
   command_t c;
   vector_get(t->command_trees, 0, &c);
+  //print_command(c);
+  printf("%d", t->command_trees->n_elements); 
   switch (c->type){
     case SIMPLE_COMMAND:
+    case AND_COMMAND:
+    case SEQUENCE_COMMAND:
+    case OR_COMMAND:
+    case PIPE_COMMAND:
+    case SUBSHELL_COMMAND:
       printf("YES");
       break;
     default:
+      printf("NO");
       break;
      
   }
+ 
 }
 
 

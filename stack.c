@@ -4,7 +4,6 @@
 ////////////////////////////////////////////
 #include <stdlib.h>
 #include "alloc.h"
-
 void stack_new(stack_t s, size_t element_size){
   s->n_elements = 0;
   s->v_stack = (vector_t)checked_malloc(sizeof(struct vector));
@@ -40,7 +39,7 @@ bool_t stack_top(stack_t s, void* dest){
 }
 
 bool_t stack_empty(stack_t s){
-  return (s->n_elements == 1);
+  return (s->n_elements == 0);
 }
 
 
