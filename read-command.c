@@ -237,6 +237,45 @@ bool_t opp_handle_new_lines(unsigned int* n_newline, stack_t opp_stack,
     return TRUE;
   }
 
+// returns the next char
+char handle_io(char current, stack_t* command_stack, 
+      string_t* simple_buffer, bool_t* checked_next) {
+  enum io r;  
+  if (current == '>')   r = OUTPUT;
+  else                  r = INPUT;
+
+  char curr_byte = get_next_byte(get_next_byte_argument);
+  if (curr_byte >= 0) {
+    if (curr_byte == '>' || curr_byte == '&')
+      curr_byte = get_next_byte(get_next_byte_argument);
+    else if (current == '>' && curr_byte == '|')
+      curr_byte = get_next_byte(get_next_byte_argument);
+  }
+  else
+    return NULL;
+
+  // remove extra whitespace
+  while (curr_byte == ' ' || curr_byte == '\t') {
+    curr_byte = get_next_byte(get_next_byte_argument);
+  }
+
+  while (!is_operator(curr_byte)) {
+    string_append_char(*simple_buffer, curr_byte);
+    curr_byte = get_next_byte(get_next_byte_argument);
+  }
+
+  *checked_next = TRUE;
+  string_append_char(*simple_buffer, '\0');
+
+  command_t com;
+  stack_pop(*command_stack, &com);
+
+  command_set_io(com, char*file, r);
+  stack_push(*command_stack, &com);
+
+  return curr_byte;
+}
+
 
 command_stream_t
 make_command_stream (int (*get_next_byte) (void *),
@@ -364,67 +403,11 @@ make_command_stream (int (*get_next_byte) (void *),
         }
         stack_push(opp_stack, &"&&");
         break;
-     case '>': // aside from INPUT and OUTPUT for command_set_io and the fact that > accepts
-                // '|' in addition to <'s '>' and '&' following the i/o redirect, '>' and '<'
-                // are essentially the same
-        curr_byte = get_next_byte(get_next_byte_argument);
-        if (curr_byte >= 0 && (curr_byte == '>' || curr_byte == '&' || curr_byte == '|')) {
-         curr_byte = get_next_byte(get_next_byte_argument);
-        }
-        else if (curr_byte < 0)
-          return NULL; 
-
-        // remove extra whitespace
-        while (curr_byte == ' ' || curr_byte == '\t') {
-          curr_byte = get_next_byte(get_next_byte_argument);
-        }
-
-       while (!is_operator(curr_byte)) {
-          string_append_char(simple_buffer, curr_byte);
-          curr_byte = get_next_byte(get_next_byte_argument);
-        }
-        checked_next = TRUE;
-
-       string_append_char(simple_buffer, '\0');
-        
-        command_t com;
-        stack_pop(command_stack, &com);
-
-        // TODO: finish setting the input of com
-        // command_set_io(com, char* file, INPUT){
-
-        stack_push(command_stack, &com);
-
-        break;
-     case '<':
-        curr_byte = get_next_byte(get_next_byte_argument);
-        if (curr_byte >= 0 && (curr_byte == '>' || curr_byte == '&')) {
-          curr_byte = get_next_byte(get_next_byte_argument);
-        }
-        else if (curr_byte < 0)
+      case '>':
+      case '<':
+        curr_byte = handle_io(curr_byte, &command_stack, &simple_buffer, &checked_next);
+        if (curr_byte == NULL)
           return NULL;
-
-        // remove extra whitespace
-        while (curr_byte == ' ' || curr_byte == '\t') {
-          curr_byte = get_next_byte(get_next_byte_argument);
-        }
-
-        while (!is_operator(curr_byte)) {
-          string_append_char(simple_buffer, curr_byte);
-          curr_byte = get_next_byte(get_next_byte_argument);
-        }
-        checked_next = TRUE;
-
-        string_append_char(simple_buffer, '\0');
-        
-        command_t com;
-        stack_pop(command_stack, &com);
-
-        // TODO: finish setting the input of com
-        // command_set_io(com, char* file, OUTPUT){
-
-        stack_push(command_stack, &com);
-
         break;
       default:
         if (opp_bool){ 
