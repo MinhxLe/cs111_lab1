@@ -172,7 +172,7 @@ bool_t opp_handle_stacks(stack_t command_stack, stack_t opp_stack){
 bool_t opp_handle_new_lines(unsigned int* n_newline, stack_t opp_stack,
     stack_t command_stack, command_stream_t m_command_stream,  bool_t* opp_bool){
   if (*n_newline == 1){
-    stack_push(opp_stack, &";");
+    stack_push(opp_stack, ";");
     *opp_bool = TRUE;
   }
   //form a new command tree
@@ -266,11 +266,11 @@ make_command_stream (int (*get_next_byte) (void *),
 
   
   
-  while (curr_byte != EOF){
+  while (curr_byte >= != EOF){
     if (!checked_next)
       curr_byte = get_next_byte(get_next_byte_argument);
     checked_next = FALSE;
-   
+   /* 
     if (curr_byte ==  '('){
       if (!opp_handle_new_lines(&new_line_count, opp_stack, command_stack, c_trees, &opp_bool))
       fprintf(stderr, "%d:FUCK YOU",line_number );
@@ -392,8 +392,8 @@ make_command_stream (int (*get_next_byte) (void *),
       string_clear(simple_buffer);
       checked_next = TRUE;
     }
-  
-    else{
+    */
+    //else{
       bool_t curr_whitespace = TRUE;
       unsigned int word_count = 0;
       //keep reading in character into simple buffer
@@ -420,10 +420,10 @@ make_command_stream (int (*get_next_byte) (void *),
             fprintf(stderr, "%dFUCK YOU", line_number);  
         }
       }
-      command_t simple = NULL;
-      handle_simple_commands(simple_buffer,simple,  word_count);
-      stack_push(command_stack, &simple);
-    }
+      //command_t simple = NULL;
+      //handle_simple_commands(simple_buffer,simple,  word_count);
+      //stack_push(command_stack, simple);
+//    }
 
   } //while
   
