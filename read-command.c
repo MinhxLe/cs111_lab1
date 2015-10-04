@@ -239,7 +239,7 @@ bool_t opp_handle_new_lines(unsigned int* n_newline, stack_t opp_stack,
 
 // returns the next char
 char handle_io(char current, stack_t* command_stack, 
-      string_t* simple_buffer, bool_t* checked_next) {
+      string_t* simple_buffer) {
   enum io r;  
   if (current == '>')   r = OUTPUT;
   else                  r = INPUT;
@@ -264,7 +264,6 @@ char handle_io(char current, stack_t* command_stack,
     curr_byte = get_next_byte(get_next_byte_argument);
   }
 
-  *checked_next = TRUE;
   string_append_char(*simple_buffer, '\0');
 
   command_t com;
@@ -405,9 +404,11 @@ make_command_stream (int (*get_next_byte) (void *),
         break;
       case '>':
       case '<':
-        curr_byte = handle_io(curr_byte, &command_stack, &simple_buffer, &checked_next);
+        curr_byte = handle_io(curr_byte, &command_stack, &simple_buffer);
         if (curr_byte == NULL)
           return NULL;
+
+        checked_next = TRUE;
         break;
       default:
         if (opp_bool){ 
