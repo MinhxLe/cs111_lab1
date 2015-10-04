@@ -185,6 +185,10 @@ bool_t opp_handle_new_lines(unsigned int* n_newline, stack_t opp_stack,
   //adding the command tree 
   command_t finished_command_tree;
   stack_pop(command_stack, &finished_command_tree);
+  
+  if (!stack_empty(command_stack))
+    return FALSE;
+
   command_stream_add(m_command_stream, &finished_command_tree);
   *n_newline = 0; 
   return TRUE; 
