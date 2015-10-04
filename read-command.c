@@ -49,7 +49,7 @@ void command_new(command_t m_command, enum command_type t, int stat,
       m_command->u.command[1] = (command_t)args[1];
       break;
     case (SIMPLE_COMMAND):
-      m_command->u.word = (char**)args[0];
+      m_command->u.words = (vector_t)args[0];
       break;
     case (SUBSHELL_COMMAND):
       m_command->u.subshell_command = (command_t)args[0];
@@ -61,7 +61,7 @@ void command_set_io(command_t c, char* file, enum io r){
   switch(r){
     case INPUT:
       c->input = file;
-    case OUPUT:
+    case OUTPUT:
       c->output = file;
   }
 }
@@ -170,10 +170,10 @@ bool_t opp_handle_stacks(stack_t command_stack, stack_t opp_stack){
  *opp_handle_new_lines handles new line while reading script
  */
 bool_t opp_handle_new_lines(unsigned int* n_newline, stack_t opp_stack,
-    stack_t command_stack, command_stream_t m_command_stream){
+    stack_t command_stack, command_stream_t m_command_stream,  bool_t* opp_bool){
   if (*n_newline == 1){
     stack_push(opp_stack, ";");
-    opp_bool = TRUE;
+    *opp_bool = TRUE;
   }
   //form a new command tree
   else if (*n_newline > 1){ 
@@ -214,7 +214,7 @@ bool_t opp_handle_new_lines(unsigned int* n_newline, stack_t opp_stack,
       if (c == ' ' || c == '\t'){
         if (start != end){
           char* new_string = NULL;
-          string_to_new_cstring(s, new_string,start,end);//creating a new string
+          string_to_new_cstring(buff, new_string,start,end);//creating a new string
           vector_set(s->u.words, word_count, &new_string);//adding pointer onto command vect
           word_count++;
         }
@@ -227,8 +227,8 @@ bool_t opp_handle_new_lines(unsigned int* n_newline, stack_t opp_stack,
         end = start = it;//start of next string
         it--; //to compensate for incrementing before
       }
-      else if ('0' <= c <= '9' || 'A' <= c <= 'Z' || 'a' <= c <= 'z' || 
-          c == '!' || c == '%' || c == ',' || c == '-' || c == '/'
+      else if (('0' <= c && c <= '9') || ('A' <= c && c<= 'Z') || ('a' <= c && c <= 'z') || 
+          c == '!' || c == '%' || c == ',' || c == '-' || c == '/' ||
           c == '.' || c == ':' || c == '@' || c == '^' || c == '_')//c is a correct character
         end++;
       else
@@ -307,7 +307,7 @@ make_command_stream (int (*get_next_byte) (void *),
     checked_next = FALSE;
     switch(curr_byte){
       case '(':
-        if (!opp_handle_new_lines(&new_line_count, opp_stack, command_stack, c_trees))
+        if (!opp_handle_new_lines(&new_line_count, opp_stack, command_stack, c_trees, &opp_bool))
           return NULL;//TODO ERROR HERE
         stack_push(opp_stack, &"(");
         paren_count++;
@@ -315,7 +315,7 @@ make_command_stream (int (*get_next_byte) (void *),
         break;
       case ')':
         //handling new line
-        if (!opp_handle_new_lines(&new_line_count, opp_stack, command_stack, c_trees))
+        if (!opp_handle_new_lines(&new_line_count, opp_stack, command_stack, c_trees, &opp_bool))
           return NULL;//TODO ERROR HERE
         if (stack_empty(opp_stack))
           return NULL; // TODO
@@ -340,23 +340,25 @@ make_command_stream (int (*get_next_byte) (void *),
         command_new(new_subshell_command, SUBSHELL_COMMAND, -1, NULL, NULL, (void*)&subshell_command);
         stack_push(command_stack, &new_subshell_command);
         break;
+      case '#':
+        //reading bytes until end of file or new line
+        while ((curr_byte = get_next_byte(get_next_byte_argument))>= 0 && 
+             curr_byte != '\n')
+           continue;
+        if (curr_byte == '\n'){//since you attempted to read to EOF, you need to see if there are errors
+          if (paren_count > 0 || opp_bool)
+            return NULL;
+          break; 
+        }
       case '\n':
         line_number++;
         if (paren_count > 0 || opp_bool)
           break;
         new_line_count++;
         break;
-      case '#':
-        while ((curr_byte = get_next_byte(get_next_byte_argument))>= 0 && 
-             curr_byte != '\n')
-           continue;
-        if (curr_byte == '\n') // if EOF then don't increment the line number
-          line_number++;
-        if (paren_count > 0 || opp_bool)
-          break;
-        new_line_count++;
-        break;
       case ';':
+        //you want to keep popping stack and creating a subtree command since
+        //this has the smallest precedence
         if (!handle_opperators(command_stack, opp_bool))
           return NULL; 
         char* c = "NOT (";
@@ -407,7 +409,7 @@ make_command_stream (int (*get_next_byte) (void *),
         curr_byte = handle_io(curr_byte, &command_stack, &simple_buffer);
         if (curr_byte == NULL)
           return NULL;
-
+        
         checked_next = TRUE;
         break;
       default:
@@ -418,7 +420,7 @@ make_command_stream (int (*get_next_byte) (void *),
         }
 
         else{
-          opp_handle_new_lines(&new_line_count, opp_stack, command_stack, c_trees); 
+          opp_handle_new_lines(&new_line_count, opp_stack, command_stack, c_trees, &opp_bool); 
         }
 
         if (curr_byte == ' ' || curr_byte == '\t'){
@@ -445,6 +447,7 @@ make_command_stream (int (*get_next_byte) (void *),
 
     return 0;
   }
+
 
 command_t
   read_command_stream (command_stream_t s)
