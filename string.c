@@ -58,19 +58,18 @@ void string_clear(string_t s){
 
 //this takes in a pointer and 
 bool_t string_to_cstring(string_t s, char* dest, size_t start, size_t end){
-  if (start < 0 || start > end || end > s->length)
+  if (start > end || end > s->length)
     return FALSE;
-  
-
   size_t x;
   for (x = 0; x < end; x++)
     vector_get(s->v_string,x, dest+x);
   dest[x] = '\0';//setting null byte
+  return TRUE;
 }
 
-bool_t string_to_new_cstring(string_t s, size_t start, size_t end, char* new){
+bool_t string_to_new_cstring(string_t s, char* new, size_t start, size_t end){
   new = checked_malloc(sizeof(char) * (end-start+1));
-  string_to_cstring(s, start, end, new);
+  return string_to_cstring(s, new, start, end);
 }
 
 bool_t cstring_to_string(string_t dest, char* source){

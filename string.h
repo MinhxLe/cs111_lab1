@@ -24,10 +24,4 @@ bool_t string_to_cstring(string_t s, char* dest, size_t start, size_t end);//end
 bool_t string_to_new_cstring(string_t s, char* dest, size_t start, size_t end);
   //this one dynamically allocates space for you!
 
-
-void cstring_to_string(string_t dest, char* source);
-
-
-
-
 #endif

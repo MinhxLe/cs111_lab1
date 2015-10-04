@@ -32,7 +32,7 @@ union
     struct command *command[2];
 
     // for SIMPLE_COMMAND:
-    vector_t words;
+    char** word;
 
     // for SUBSHELL_COMMAND:
     struct command *subshell_command;
