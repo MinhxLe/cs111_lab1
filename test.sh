@@ -1,3 +1,1 @@
-#!/bin/bash
-
-echo x || echo y
+echo x

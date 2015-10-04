@@ -244,7 +244,6 @@ bool_t handle_operator(stack_t command_stack, stack_t opp_stack, char* opp){
 make_command_stream (int (*get_next_byte) (void *),
     void *get_next_byte_argument)
 {
-
   unsigned int paren_count = 0; //counts paren
   unsigned int new_line_count = 0; //new line count
   unsigned int line_number = 1;
@@ -264,15 +263,16 @@ make_command_stream (int (*get_next_byte) (void *),
   //will be c strings
   stack_t opp_stack = checked_malloc(sizeof(struct stack));
   stack_new(command_stack, sizeof(char*));
-  //
   while (curr_byte >= 0){
+    printf("%d\n", curr_byte);
     if (!checked_next)
       curr_byte = get_next_byte(get_next_byte_argument);
     checked_next = FALSE;
-
+    continue;
     if (curr_byte ==  '('){
+      continue;
       if (!opp_handle_new_lines(&new_line_count, opp_stack, command_stack, c_trees, &opp_bool))
-        return NULL;//TODO ERROR HERE
+      fprintf(stderr, "%d:FUCK YOU",line_number );
       stack_push(opp_stack, &"(");
       paren_count++;
       opp_bool = TRUE;
@@ -280,15 +280,15 @@ make_command_stream (int (*get_next_byte) (void *),
     else if (curr_byte ==  ')'){
       //handling new line
       if (!opp_handle_new_lines(&new_line_count, opp_stack, command_stack, c_trees, &opp_bool))
-        return NULL;//TODO ERROR HERE
+        fprintf(stderr, "%dFUCK YOU", line_number);//TODO ERROR HERE
       if (stack_empty(opp_stack))
-        return NULL; // TODO
+        fprintf(stderr, "%dFUCK YOU", line_number); // TODO
       char* temp;
       stack_top(opp_stack, temp);
       // NOTE: might be able to do this as a function (opp_handle_stacks but modified)
       while (strcmp(temp, "(") != 0){
         if (!opp_handle_stacks(command_stack, opp_stack))
-          return NULL;
+          fprintf(stderr, "%dFUCK YOU", line_number);
         stack_top(opp_stack, temp);
       }
 
@@ -309,10 +309,12 @@ make_command_stream (int (*get_next_byte) (void *),
       while ((curr_byte = get_next_byte(get_next_byte_argument))>= 0 && 
           curr_byte != '\n')
         continue;
-      if (curr_byte == '\n'){//since you attempted to read to EOF, you need to see if there are errors
+      //since you attempted to read to EOF, you need to see if there are errors
+      if (curr_byte < 0){
         if (paren_count > 0 || opp_bool)
-          return NULL;
+          fprintf(stderr, "%dFUCK YOU", line_number);
       }
+      checked_next = TRUE;
     }
     else if (curr_byte ==  '\n'){
       line_number++;
@@ -323,18 +325,18 @@ make_command_stream (int (*get_next_byte) (void *),
       //you want to keep popping stack and creating a subtree command since
       //this has the smallest precedence
       if (!operator_check(command_stack, opp_bool))
-        return NULL; 
+        fprintf(stderr, "%dFUCK YOU", line_number); 
       handle_operator(command_stack, opp_stack, ";");
     }
     else if (curr_byte ==  '|'){
       if (!operator_check(command_stack, opp_bool))
-        return NULL;
+        fprintf(stderr, "%dFUCK YOU", line_number);
       if ((curr_byte = get_next_byte(get_next_byte_argument) >= 0 && curr_byte == '|')){
         handle_operator(command_stack, opp_stack, "||");  
       }
       else{
         if (curr_byte < 0)
-          return NULL;
+          fprintf(stderr, "%dFUCK YOU", line_number);
         checked_next = TRUE;
         //handle_operator(command_stack, opp_stack, "|")
         //we don't need to call because | has highest precedence
@@ -345,9 +347,9 @@ make_command_stream (int (*get_next_byte) (void *),
     }
     else if (curr_byte == '&'){
       if (!operator_check(command_stack, opp_bool))
-        return NULL;
+        fprintf(stderr, "%dFUCK YOU", line_number);
       if (!(curr_byte = get_next_byte(get_next_byte_argument) >= 0 && curr_byte == '&'))
-        return NULL;
+        fprintf(stderr, "%dFUCK YOU", line_number);
       //don't need to checked_next because & comes in pairs
       handle_operator(command_stack, opp_stack, "&&");
     }
@@ -362,7 +364,7 @@ make_command_stream (int (*get_next_byte) (void *),
           curr_byte = get_next_byte(get_next_byte_argument);
       }
       else
-        return NULL;
+        fprintf(stderr, "%dFUCK YOU", line_number);
 
       // remove extra whitespace
       while (curr_byte == ' ' || curr_byte == '\t') {
@@ -411,7 +413,7 @@ make_command_stream (int (*get_next_byte) (void *),
             checked_next = TRUE;
           }
           else
-            return NULL;  
+            fprintf(stderr, "%dFUCK YOU", line_number);  
         }
       }
       command_t simple = NULL;
@@ -426,7 +428,7 @@ make_command_stream (int (*get_next_byte) (void *),
   stack_delete(opp_stack);
   free(opp_stack);
 
-  return NULL;
+  return c_trees;
 }
 
 
@@ -434,6 +436,8 @@ make_command_stream (int (*get_next_byte) (void *),
   command_t
 read_command_stream (command_stream_t s)
 {
+
+
   /* FIXME: Replace this with your implementation too.  */
   error (1, 0, "command reading not yet implemented");
   return 0;
