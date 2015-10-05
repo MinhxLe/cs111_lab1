@@ -139,7 +139,6 @@ bool_t opp_handle_stacks(stack_t command_stack, stack_t opp_stack){
   stack_pop(command_stack, commands);
   stack_pop(command_stack, commands+1);
   stack_pop(opp_stack, &opperand); 
-
   // valid becaues you're just setting opperand to point to the popped cstring 
   if (strcmp(opperand, "&&") == 0){
     //TODO: what is status
@@ -179,7 +178,6 @@ bool_t create_new_command_tree(stack_t command_stack, stack_t opp_stack,
   stack_pop(command_stack, &finished_command_tree);
   //printf("%d\n", command_stack->n_elements);
   if (!stack_empty(command_stack)){
-    printf("COMMAND STACK ISN'T EMPTY");
     return FALSE;
     
   }
@@ -194,7 +192,7 @@ bool_t create_new_command_tree(stack_t command_stack, stack_t opp_stack,
 bool_t opp_handle_new_lines(unsigned int* n_newline, stack_t opp_stack,
     stack_t command_stack, command_stream_t m_command_stream,  bool_t* opp_bool){
   if (*n_newline == 1){
-    stack_push(opp_stack, ";");
+    stack_push(opp_stack, &";");
     *opp_bool = TRUE;
   }
   //form a new command tree
@@ -217,9 +215,9 @@ bool_t operator_check(stack_t command_stack, bool_t opp_bool){
 
 // checks to see if a char is an operator
 bool_t is_operator(char c) {
-  return c == '(' || c == ')' || c == '\n' || c == '#'
+  return (c == '(' || c == ')' || c == '\n' || c == '#'
     || c == ';' || c == '|' || c == '&' || c == '>'
-    || c == '<';
+    || c == '<');
 }
 
 bool_t is_command_char(char c){
@@ -238,7 +236,6 @@ bool_t handle_simple_commands(string_t buff, command_t* s, unsigned int wc){
   size_t end = 0;
   size_t word_count = 0;
   char c = '\0';
-  //printf("%d\n", buff->length);
   for (size_t it = 0; it < buff->length; it++){
     string_get_char(buff, it, &c);
     //printf("%d\n", c);
@@ -296,11 +293,9 @@ make_command_stream (int (*get_next_byte) (void *),
   stack_new(opp_stack, sizeof(char*));
 
   curr_byte = get_next_byte(get_next_byte_argument);
+ 
+
   while (curr_byte != EOF){
-    if (!checked_next){
-      curr_byte = get_next_byte(get_next_byte_argument);
-    }
-    checked_next = FALSE;
    
     //printf("%c\n", curr_byte);
     if (curr_byte ==  '('){
@@ -363,21 +358,24 @@ make_command_stream (int (*get_next_byte) (void *),
     else if (curr_byte ==  '|'){
       if (!operator_check(command_stack, opp_bool))
         fprintf(stderr, "%dconsecutive operator before |", line_number);
-      if ((curr_byte = get_next_byte(get_next_byte_argument) != EOF && curr_byte == '|')){
+      curr_byte = get_next_byte(get_next_byte_argument);
+      if ((curr_byte != EOF && curr_byte == '|')){
         handle_operator(command_stack, opp_stack, "||");  
       }
       else{
         if (curr_byte == EOF)
           fprintf(stderr, "%dEOF after reading pipe\n", line_number);
         checked_next = TRUE;
-        //handle_operator(command_stack, opp_stack, "|")
+        handle_operator(command_stack, opp_stack, "|");
         //we don't need to call because | has highest precedence
-        stack_push(opp_stack, &"|");
+        //stack_push(opp_stack, &"|");
+
 
       } 
       opp_bool = TRUE;
     }
     else if (curr_byte == '&'){
+      printf("HANDLING &");
       if (!operator_check(command_stack, opp_bool))
         fprintf(stderr, "%d:opp check for & failed!", line_number);
       if (!(curr_byte = get_next_byte(get_next_byte_argument) != EOF && curr_byte == '&'))
@@ -418,7 +416,6 @@ make_command_stream (int (*get_next_byte) (void *),
         command_set_io(com, f, OUTPUT);
       else
         command_set_io(com, f, INPUT);
-
       stack_push(command_stack, &com);
       string_clear(simple_buffer);
       checked_next = TRUE;
@@ -440,21 +437,28 @@ make_command_stream (int (*get_next_byte) (void *),
         }
         else {
           //printf("%c\n", curr_byte);
-          curr_whitespace = FALSE; 
           if (is_command_char(curr_byte)){
             opp_bool = FALSE;
             string_append_char(simple_buffer, curr_byte);
           } 
-          else if (is_operator(curr_byte) || curr_byte == '\n'){
-            word_count++;
-            //string_append_char(simple_buffer, '\0');
+          else if (is_operator(curr_byte)){
+            if (!curr_whitespace)
+              word_count++;
+            string_append_char(simple_buffer, '\0');
             checked_next = TRUE;
             break;
           }
           else
             fprintf(stderr, "%d:invalid character(%c) in script\n", line_number, curr_byte);  
+          curr_whitespace = FALSE;           
         }
         curr_byte = get_next_byte(get_next_byte_argument); 
+      }
+      //if the last thing you read was NOT a whitespace, you need to finish that
+      //word, so you appedn a null byte
+      if (curr_byte == EOF && !curr_whitespace){
+        string_append_char(simple_buffer, '\0');
+        word_count++;
       }
       //adding simple command
       command_t simple;
@@ -463,17 +467,22 @@ make_command_stream (int (*get_next_byte) (void *),
       stack_push(command_stack, &simple);
     }
   //printf("ENERING: %c:%d\n", curr_byte, command_stack->n_elements);
+    if (!checked_next){
+      curr_byte = get_next_byte(get_next_byte_argument);
+    }
+    checked_next = FALSE;
 
   } //while
+
   //NOT EXACTLY RIGHT
+
+  //return;
   if (!stack_empty(command_stack)){
-    printf("%d", command_stack->n_elements);
     command_t test;
     stack_top(command_stack, &test);
     if(!create_new_command_tree(command_stack, opp_stack,c_trees))  
         fprintf(stderr, "%d:command_stack not empty after creating tree\n", line_number);
   }
-
 
 
   string_delete(simple_buffer);
@@ -493,14 +502,23 @@ void print_command_stream(command_stream_t t){
   command_t c;
   vector_get(t->command_trees, 0, &c);
   //print_command(c);
-  //printf(c->u.word[0]);
-  /* 
+  //printf("%d", c->u.word+1);
+   
   switch (c->type){
-    case SIMPLE_COMMAND:
+    
+    //case SIMPLE_COMMAND:
     case AND_COMMAND:
+      printf("this is an && statement");
+      break;
     case SEQUENCE_COMMAND:
+      printf("this is a sequence statement");
+      break;
     case OR_COMMAND:
+      printf("this is an || statement");
+      break;
     case PIPE_COMMAND:
+      printf("this is an | statement");
+      break;
     case SUBSHELL_COMMAND:
       printf("YES");
       break;
@@ -509,7 +527,7 @@ void print_command_stream(command_stream_t t){
       break;
      
   }
-  */
+  
 }
 
 
