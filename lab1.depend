@@ -1,0 +1,115 @@
+# depslib dependency file v1.0
+1443301924 source:/home/minh/School/cs111/labs/lab1-Skeleton/execute-command.c
+	"command.h"
+	"command-internals.h"
+	<error.h>
+
+1443946119 /home/minh/School/cs111/labs/lab1-Skeleton/command.h
+	"command-internals.h"
+
+1443954119 /home/minh/School/cs111/labs/lab1-Skeleton/command-internals.h
+	"vector.h"
+
+1443949055 /home/minh/School/cs111/labs/lab1-Skeleton/vector.h
+	<stdlib.h>
+	"declarations.h"
+
+1443830517 /home/minh/School/cs111/labs/lab1-Skeleton/declarations.h
+
+1443554674 source:/home/minh/School/cs111/labs/lab1-Skeleton/alloc.c
+	"alloc.h"
+	<error.h>
+	<errno.h>
+	<stdlib.h>
+
+1326137780 /home/minh/School/cs111/labs/lab1-Skeleton/alloc.h
+	<stddef.h>
+
+1443946124 source:/home/minh/School/cs111/labs/lab1-Skeleton/main2.c
+	<errno.h>
+	<error.h>
+	<getopt.h>
+	<stdio.h>
+	"command.h"
+
+1444021501 source:/home/minh/School/cs111/labs/lab1-Skeleton/print-command.c
+	"command.h"
+	"command-internals.h"
+	<stdio.h>
+	<stdlib.h>
+
+1444025646 source:/home/minh/School/cs111/labs/lab1-Skeleton/read-command.c
+	"command.h"
+	"command-internals.h"
+	"alloc.h"
+	<error.h>
+	<string.h>
+	<stdlib.h>
+	<string.h>
+	<stdio.h>
+	"declarations.h"
+	"vector.h"
+	"stack.h"
+	"string.h"
+
+1443830517 /home/minh/School/cs111/labs/lab1-Skeleton/stack.h
+	"declarations.h"
+	"vector.h"
+
+1443957050 /home/minh/School/cs111/labs/lab1-Skeleton/string.h
+	"declarations.h"
+	"vector.h"
+	<stdlib.h>
+
+1444025648 source:/home/minh/School/cs111/labs/lab1-Skeleton/stack.c
+	"stack.h"
+	<stdlib.h>
+	<stdio.h>
+	"alloc.h"
+
+1443957050 source:/home/minh/School/cs111/labs/lab1-Skeleton/string.c
+	"string.h"
+	"alloc.h"
+	<string.h>
+	<stdio.h>
+
+1443830517 source:/home/minh/School/cs111/labs/lab1-Skeleton/test/alloc.c
+	"alloc.h"
+	<error.h>
+	<errno.h>
+	<stdlib.h>
+
+1443830517 /home/minh/School/cs111/labs/lab1-Skeleton/test/alloc.h
+	<stddef.h>
+
+1443830517 source:/home/minh/School/cs111/labs/lab1-Skeleton/test/main.c
+	"command.h"
+	<stdio.h>
+
+1443830517 /home/minh/School/cs111/labs/lab1-Skeleton/test/command.h
+
+1443830517 source:/home/minh/School/cs111/labs/lab1-Skeleton/test/print-command.c
+	"command.h"
+	"command-internals.h"
+	<stdio.h>
+	<stdlib.h>
+
+1443830517 /home/minh/School/cs111/labs/lab1-Skeleton/test/command-internals.h
+
+1443830517 source:/home/minh/School/cs111/labs/lab1-Skeleton/test/read-command.c
+	"command.h"
+	"command-internals.h"
+	"alloc.h"
+	<error.h>
+	<string.h>
+	<stdlib.h>
+	<string.h>
+	<stdio.h>
+
+1443951259 source:/home/minh/School/cs111/labs/lab1-Skeleton/vector.c
+	"vector.h"
+	<stdlib.h>
+	<string.h>
+	"alloc.h"
+	<stdio.h>
+

@@ -6,7 +6,7 @@
 *.obj
 *.elf
 *.swp
-
+*.cbp
 # Precompiled Headers
 *.gch
 *.pch

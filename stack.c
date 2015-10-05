@@ -3,6 +3,7 @@
 ////////   STACK IMPLEMENTATION    /////////
 ////////////////////////////////////////////
 #include <stdlib.h>
+#include <stdio.h>
 #include "alloc.h"
 void stack_new(stack_t s, size_t element_size){
   s->n_elements = 0;

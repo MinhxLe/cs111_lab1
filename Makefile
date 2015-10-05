@@ -6,7 +6,11 @@ LAB = 1
 DISTDIR = lab1-$(USER)
 
 all: 
-	$(CC) $(TIMETRASH_SOURCES)
+	$(CC) -std=c99 $(TIMETRASH_SOURCES)
+Debug: 
+	$(CC) -c $(TIMETRASH_SOURCES)
+
+
 
 TIMETRASH_SOURCES = \
   alloc.c \
