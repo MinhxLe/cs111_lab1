@@ -18,6 +18,6 @@ bool_t stack_top(stack_t s, void* dest);
 bool_t stack_empty(stack_t s);
 
 
-
+void stack_test();
 
 #endif

@@ -43,4 +43,17 @@ bool_t stack_empty(stack_t s){
   return (s->n_elements == 0);
 }
 
-
+void stack_test(){
+  stack_t s = malloc(sizeof(struct stack));
+  stack_new(s, sizeof(int));
+  for (int x = 0; x< 100; x++){
+    stack_push(s, &x);
+  }
+  int y;
+  for (int x =  0; x < 100; x++){
+    stack_pop(s, &y);
+    printf("%d\n", y);
+  }
+  stack_delete(s);
+  free(s);
+}

@@ -21,5 +21,6 @@ bool_t vector_remove(vector_t s, size_t index);
 
 void vector_clear(vector_t v);
 
+void vector_test();
 
 #endif

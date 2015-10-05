@@ -26,13 +26,23 @@ get_next_byte (void *stream)
 int
 main ()
 {
-  printf("TEST");
+  /*
+  printf("VECTOR TEST\n");
+  vector_test();
+  printf("STACK TEST\n");
+  stack_test();
+  
+  printf("string Test\n");
+  string_test();
+  */
+  
+  return 0;
   script_name = "test.sh";
   FILE *script_stream = fopen (script_name, "r");
   if (! script_stream)
     error (1, errno, "%s: cannot open", script_name);
-  command_stream_t command_stream = make_command_stream (get_next_byte, script_stream);
-
+  //command_stream_t command_stream = make_command_stream (get_next_byte, script_stream);
+  
   //print_command_stream(command_stream);
   //printf("%d", command_stream->n_commands);
   //command_new(combined, AND_COMMAND, 0,0,0,(void*)c);

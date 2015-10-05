@@ -191,6 +191,7 @@ bool_t create_new_command_tree(stack_t command_stack, stack_t opp_stack,
  */
 bool_t opp_handle_new_lines(unsigned int* n_newline, stack_t opp_stack,
     stack_t command_stack, command_stream_t m_command_stream,  bool_t* opp_bool){
+
   if (*n_newline == 1){
     stack_push(opp_stack, &";");
     *opp_bool = TRUE;
@@ -258,11 +259,11 @@ bool_t handle_simple_commands(string_t buff, command_t* s, unsigned int wc){
 //handles most* opperators
 bool_t handle_operator(stack_t command_stack, stack_t opp_stack, char* opp){
   char* c = "NOT (";
-  stack_top(opp_stack, c);
+  stack_top(opp_stack, &c);
 
   while (!stack_empty(opp_stack) && strcmp(c, "(") != 0 && precedence(c, opp) > -1){
     opp_handle_stacks(command_stack, opp_stack);
-    stack_top(opp_stack, c);
+    stack_top(opp_stack, &c);
   }
   stack_push(opp_stack, &opp);
   return TRUE;
@@ -276,7 +277,7 @@ make_command_stream (int (*get_next_byte) (void *),
   unsigned int new_line_count = 0; //new line count
   unsigned int line_number = 1;
   bool_t opp_bool = TRUE; //there was an operator before
-  bool_t checked_next = TRUE; //we checked the next character so don't read in another
+  bool_t checked_next = FALSE; //we checked the next character so don't read in another
 
   string_t simple_buffer = checked_malloc(sizeof(struct string));
   string_new(simple_buffer);
@@ -294,7 +295,7 @@ make_command_stream (int (*get_next_byte) (void *),
 
   curr_byte = get_next_byte(get_next_byte_argument);
  
-
+  //looking through every byte
   while (curr_byte != EOF){
    
     //printf("%c\n", curr_byte);
@@ -304,26 +305,33 @@ make_command_stream (int (*get_next_byte) (void *),
       stack_push(opp_stack, &"(");
       paren_count++;
       opp_bool = TRUE;
+      
     }
     else if (curr_byte ==  ')'){
+
       //handling new line
       if (!opp_handle_new_lines(&new_line_count, opp_stack, command_stack, c_trees, &opp_bool))
-        fprintf(stderr, "%d:) new line handle failed\n", line_number);//TODO ERROR HERE
+        fprintf(stderr, "%d:) new line handle failed\n", line_number);//TODO ERROR HER
       char* temp;
-      if (!stack_top(opp_stack, temp))
+      printf("%d\n", opp_stack->n_elements);
+      if (!stack_top(opp_stack, &temp))
         fprintf(stderr, "%d:) missing ( to match", line_number); // TODO
-      // NOTE: might be able to do this as a function (opp_handle_stacks but modified)
+      // NOTE: might be able to do this as a function (opp_handle_stacks but modified) 
+      printf(temp);
+      return;
       while (strcmp(temp, "(") != 0){
         if (!opp_handle_stacks(command_stack, opp_stack))
           fprintf(stderr, "%d:failed to find matching (", line_number);
-        stack_top(opp_stack, temp);
+        
+        stack_top(opp_stack, &temp);
       }
-      
+    
+      return; 
       //popping top off which is (
       stack_pop(opp_stack, &temp);
       paren_count--;
       opp_bool = FALSE;
-
+    
       //the top of command stack will be the subshell command
       command_t new_subshell_command = checked_malloc(sizeof(struct command));
       command_t subshell_command;
@@ -331,6 +339,7 @@ make_command_stream (int (*get_next_byte) (void *),
       command_new(new_subshell_command, SUBSHELL_COMMAND, -1, NULL, NULL, (void*)&subshell_command);
       stack_push(command_stack, &new_subshell_command);
     }
+    
     else if (curr_byte == '#'){
       //reading bytes until end of file or new line
       while ((curr_byte = get_next_byte(get_next_byte_argument)) != EOF && 
@@ -420,7 +429,7 @@ make_command_stream (int (*get_next_byte) (void *),
       string_clear(simple_buffer);
       checked_next = TRUE;
     }
-  
+    
     else{
       bool_t curr_whitespace = TRUE;
       unsigned int word_count = 0;
@@ -467,11 +476,12 @@ make_command_stream (int (*get_next_byte) (void *),
       stack_push(command_stack, &simple);
     }
   //printf("ENERING: %c:%d\n", curr_byte, command_stack->n_elements);
+ 
     if (!checked_next){
       curr_byte = get_next_byte(get_next_byte_argument);
     }
+  
     checked_next = FALSE;
-
   } //while
 
   //NOT EXACTLY RIGHT

@@ -52,3 +52,19 @@ bool_t vector_remove(vector_t s, size_t index){
 void vector_get_elements(vector_t v, void* start){
   start = v->elements;
 }
+
+
+void vector_test(){
+  vector_t v = malloc(sizeof(struct vector));
+  vector_new(v, sizeof(int));
+  for (int x = 0; x < 100; x++){
+    vector_set(v, x, &x);
+  }
+  int y;
+  for (int x = 0; x < 100; x++){
+    vector_get(v, x, &y);
+    printf("%d\n", y);
+  }
+  vector_delete(v);
+  free(v);
+}

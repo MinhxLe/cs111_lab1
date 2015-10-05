@@ -91,3 +91,25 @@ size_t string_length(string_t s){
 bool_t string_get_char(string_t s, size_t index, char* c){
   return vector_get(s->v_string, index, c);
 }
+
+void string_test(){
+  string_t s = malloc(sizeof(struct string));
+  string_new(s);
+  //string_append(s, "alkjdskfj");
+  
+  for (int x = 0; x < 200; x++){
+    string_append_char(s, (char)x);
+
+  }
+
+  //string_append_char(s, 'a');
+  //string_append_char(s, 'b');
+  string_append_char(s,'\0' );
+  char*c ;
+  string_to_new_cstring(s,&c, 0, s->length);
+  printf("%d\n", s->length);
+  printf(c);
+  string_delete(s);
+  free(s);
+  free(c);
+}
