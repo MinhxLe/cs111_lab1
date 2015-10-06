@@ -34,12 +34,8 @@ void command_stream_new(command_stream_t m_command_stream);
 void command_stream_delete(command_stream_t cs);
 void command_stream_add(command_stream_t s, command_t* c);
 
-enum io{
- INPUT,
- OUTPUT,
-};
-void command_set_io(command_t c,char* file,enum io r);
+void command_set_io(command_t c,char* file, char r);
 
 
-void print_command_stream(command_stream_t t);
+void test_command_stream(command_stream_t t);
 #endif

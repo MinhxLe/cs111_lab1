@@ -97,7 +97,7 @@ void string_print(string_t s){
   //printf("%d\n", s->length);
   for (unsigned int x = 0; x < s->length; x++){
     string_get_char(s,x, &c);
-    printf("%c", c);
+    printf("%d\n", c);
   }
   printf("\n");
 }
