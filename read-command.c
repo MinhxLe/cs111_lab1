@@ -560,8 +560,18 @@ void test_command_stream(command_stream_t t){
   command_t
 read_command_stream (command_stream_t s)
 {
+  command_t returning_command = NULL;
 
-  /* FIXME: Replace this with your implementation too.  */
-  error (1, 0, "command reading not yet implemented");
-  return 0;
+  if (s->command_trees != NULL) {
+    vector_get(s->command_trees, 0, returning_command);
+    vector_remove(s->command_trees, 0);
+
+    if (s->command_trees->n_elements == 0) {
+      vector_t to_delete = s->command_trees;
+      s->command_trees = NULL;
+      vector_delete(to_delete);
+    }
+  }
+
+  return returning_command;
 }
