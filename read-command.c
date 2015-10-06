@@ -142,8 +142,9 @@ void opp_handle_stacks(stack_t command_stack, stack_t opp_stack){
   command_t commands[2];
   char opperand;
   command_t dest = checked_malloc(sizeof(struct command));
-  stack_pop(command_stack, commands);
+  
   stack_pop(command_stack, commands+1);
+  stack_pop(command_stack, commands);
   stack_pop(opp_stack, &opperand); 
   // valid becaues you're just setting opperand to point to the popped cstring 
   if (opperand == '&'){
@@ -438,6 +439,7 @@ void parse_command_tree(string_t cln_string, command_stream_t tree){
       i--;
       command_t new_simple = checked_malloc(sizeof(struct command));
       opp_create_simple_command(simple_buff, new_simple, word_count);
+      stack_push(com_stack, &new_simple);
       string_clear(simple_buff);
     }
     else{
