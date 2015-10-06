@@ -59,7 +59,6 @@ main (int argc, char **argv)
   command_t last_command = NULL;
   command_t command = checked_malloc(sizeof(struct command));
   
-  vector_get(command_stream->command_trees, 0, & command);
   while ((command = read_command_stream (command_stream)))
     {
       if (print_tree)
