@@ -69,17 +69,12 @@ void command_set_io(command_t c, char* file, char r){
 /////////////////////////////////////////////////
 ///////COMMAND STREAM IMPLEMENTATION/////////////
 /////////////////////////////////////////////////
-//command stream implementation
-struct command_stream{
-  //points to list of ROOTS of command tree
-  vector_t command_trees;
-  unsigned int n_commands;
-};
 
 //initalizes new command_stream
 void command_stream_new(command_stream_t m_command_stream){
   //creating initial command_stream
   m_command_stream->n_commands = 0;
+  m_command_stream->curr_com_index = 0;
   m_command_stream->command_trees = checked_malloc(sizeof (struct vector));
   vector_new(m_command_stream->command_trees, sizeof(command_t));
 }
@@ -417,28 +412,24 @@ void opp_add_new_command_tree(stack_t command_stack, stack_t opp_stack,
 
 //SHOULD ALWAYS WORK BECAUSE YOUR INPUTED STRING IS VALID
 void parse_command_tree(string_t cln_string, command_stream_t tree){
-  //string_t simple_buf 
-  
-  
   //necessary data structures
   stack_t com_stack = checked_malloc(sizeof(struct stack));
   stack_t op_stack = checked_malloc(sizeof(struct stack));
   stack_new(com_stack, sizeof(command_t));//stack of command pointers
   stack_new(op_stack, sizeof(char));
   string_t simple_buff = checked_malloc(sizeof(struct string));//unnecssary
-
+  string_new(simple_buff);
     
   //for every character
   char curr_char;
   for (unsigned int i = 0; i < cln_string->length; i++){
     
     
-    
     string_get_char(cln_string,i, &curr_char);
     //creates a simple command out of whatever is read in
     if (is_command_char(curr_char) || curr_char == '\0'){
       unsigned word_count = 0;
-      while (is_command_char(curr_char || curr_char == '\0')){
+      while (is_command_char(curr_char) || curr_char == '\0'){
         string_append_char(simple_buff, curr_char); 
         string_get_char(cln_string,++i, &curr_char);
         if (curr_char == '\0')
@@ -473,7 +464,6 @@ void parse_command_tree(string_t cln_string, command_stream_t tree){
         stack_push(com_stack, &subshell);
       }
       else if (curr_char == '\n'){
-        printf("NEW LINE");
         i++;//skip next char cause we know for sure it's  new line
         opp_add_new_command_tree(com_stack, op_stack, tree);      
       }
@@ -535,12 +525,7 @@ make_command_stream (int (*get_next_byte) (void *),
   string_t clean_string = checked_malloc(sizeof(struct string));
   string_new(clean_string);
   string_print(clean_string);
-  //string_print(raw_string);
   clean_raw_buffer(raw_string, clean_string);
-  //string_print(clean_string);
-  
-  string_print(clean_string);
-  printf("%u\n", (unsigned int)clean_string->length);
   //creating a new command sream
   command_stream_t m_tree = checked_malloc(sizeof(struct command_stream));
   command_stream_new(m_tree);
@@ -560,18 +545,13 @@ void test_command_stream(command_stream_t t){
   command_t
 read_command_stream (command_stream_t s)
 {
-  command_t returning_command = NULL;
-
-  if (s->command_trees != NULL) {
-    vector_get(s->command_trees, 0, returning_command);
-    vector_remove(s->command_trees, 0);
-
-    if (s->command_trees->n_elements == 0) {
-      vector_t to_delete = s->command_trees;
-      s->command_trees = NULL;
-      vector_delete(to_delete);
-    }
+  if (s->curr_com_index < s->n_commands){ 
+    command_t returning_command;
+    vector_get(s->command_trees, s->curr_com_index, &returning_command);
+    s->curr_com_index++;
+    return returning_command;
   }
-
-  return returning_command;
+  else
+      return NULL;
 }
+

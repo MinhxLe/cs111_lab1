@@ -30,6 +30,13 @@ int command_status (command_t);
 void command_new(command_t m_command, enum command_type t, int stat,char* in, char* out, void * args[2]);
 
 
+//command stream implementation
+struct command_stream{
+  //points to list of ROOTS of command tree
+  vector_t command_trees;
+  unsigned int n_commands;
+  unsigned int curr_com_index;
+};
 void command_stream_new(command_stream_t m_command_stream);
 void command_stream_delete(command_stream_t cs);
 void command_stream_add(command_stream_t s, command_t* c);

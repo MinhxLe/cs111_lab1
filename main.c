@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 #include "command.h"
+#include "alloc.h"
 
 static char const *program_name;
 static char const *script_name;
@@ -56,8 +57,12 @@ main (int argc, char **argv)
     make_command_stream (get_next_byte, script_stream);
 
   command_t last_command = NULL;
-  command_t command;
-
+  command_t command = checked_malloc(sizeof(struct command));
+  
+  printf("%d", command_stream->n_commands);
+  vector_get(command_stream->command_trees, 0, & command);
+  //print_command(command);
+  return 0;
   //now we print out the command_t for every command?j
   while ((command = read_command_stream (command_stream)))
     {
