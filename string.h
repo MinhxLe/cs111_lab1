@@ -19,10 +19,11 @@ bool_t string_empty(string_t s);
 
 size_t string_length(string_t s);
 
+
 bool_t string_get_char(string_t s, size_t index, char* c);
 bool_t string_to_cstring(string_t s, char* dest, size_t start, size_t end);//end exclusive
 bool_t string_to_new_cstring(string_t s, char** dest, size_t start, size_t end);
   //this one dynamically allocates space for you!
 
-void string_test();
+void string_print(string_t s);
 #endif

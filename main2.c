@@ -36,12 +36,11 @@ main ()
   string_test();
   */
   
-  return 0;
   script_name = "test.sh";
   FILE *script_stream = fopen (script_name, "r");
   if (! script_stream)
     error (1, errno, "%s: cannot open", script_name);
-  //command_stream_t command_stream = make_command_stream (get_next_byte, script_stream);
+  command_stream_t command_stream = make_command_stream (get_next_byte, script_stream);
   
   //print_command_stream(command_stream);
   //printf("%d", command_stream->n_commands);

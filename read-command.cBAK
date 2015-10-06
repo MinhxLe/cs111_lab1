@@ -81,7 +81,7 @@ void command_stream_new(command_stream_t m_command_stream){
   //creating initial command_stream
   m_command_stream->n_commands = 0;
   m_command_stream->command_trees = checked_malloc(sizeof (struct vector));
-  vector_new(m_command_stream->command_trees, sizeof(command_t*));
+  vector_new(m_command_stream->command_trees, sizeof(command_t));
 }
 
 void command_stream_delete(command_stream_t cs){
@@ -139,7 +139,6 @@ bool_t opp_handle_stacks(stack_t command_stack, stack_t opp_stack){
   stack_pop(command_stack, commands);
   stack_pop(command_stack, commands+1);
   stack_pop(opp_stack, &opperand); 
-
   // valid becaues you're just setting opperand to point to the popped cstring 
   if (strcmp(opperand, "&&") == 0){
     //TODO: what is status
@@ -162,17 +161,39 @@ bool_t opp_handle_stacks(stack_t command_stack, stack_t opp_stack){
   }
   stack_push(command_stack, &dest);
 
-  //stack_push(command_stack, &dest);
   return TRUE;
 }
+
+bool_t create_new_command_tree(stack_t command_stack, stack_t opp_stack,
+    command_stream_t m_command_stream){
+    while (!stack_empty(opp_stack)){
+      if (opp_handle_stacks(command_stack, opp_stack) ==  FALSE)
+        //printf("should not print");
+        return FALSE;
+    }
+  //adding the command tree 
+  
+  //printf("%d\n", command_stack->n_elements);
+  command_t finished_command_tree;
+  stack_pop(command_stack, &finished_command_tree);
+  //printf("%d\n", command_stack->n_elements);
+  if (!stack_empty(command_stack)){
+    return FALSE;
+    
+  }
+  command_stream_add(m_command_stream, &finished_command_tree);
+  return TRUE;
+}
+
 
 /*
  *opp_handle_new_lines handles new line while reading script
  */
 bool_t opp_handle_new_lines(unsigned int* n_newline, stack_t opp_stack,
     stack_t command_stack, command_stream_t m_command_stream,  bool_t* opp_bool){
+
   if (*n_newline == 1){
-    stack_push(opp_stack, ";");
+    stack_push(opp_stack, &";");
     *opp_bool = TRUE;
   }
   //form a new command tree
@@ -181,12 +202,11 @@ bool_t opp_handle_new_lines(unsigned int* n_newline, stack_t opp_stack,
       if (opp_handle_stacks(command_stack, opp_stack) ==  FALSE)
         return FALSE;
     }
+    if (!create_new_command_tree(command_stack, opp_stack, m_command_stream))
+      return FALSE;
   }
-  //adding the command tree 
-  command_t finished_command_tree;
-  stack_pop(command_stack, &finished_command_tree);
-  command_stream_add(m_command_stream, &finished_command_tree);
   *n_newline = 0; 
+
   return TRUE; 
 }
 //prechecks all things operator related
@@ -196,45 +216,54 @@ bool_t operator_check(stack_t command_stack, bool_t opp_bool){
 
 // checks to see if a char is an operator
 bool_t is_operator(char c) {
-  return c != '(' && c != ')' && c != '\n' && c != '#'
-    && c != ';' && c != '|' && c != '&' && c != '>'
-    && c != '<';
+  return (c == '(' || c == ')' || c == '\n' || c == '#'
+    || c == ';' || c == '|' || c == '&' || c == '>'
+    || c == '<');
 }
+
 bool_t is_command_char(char c){
   return ('0' <= c && c <= '9') || ('A' <= c && c<= 'Z') || ('a' <= c && c <= 'z') || 
     c == '!' || c == '%' || c == ',' || c == '-' || c == '/' ||
     c == '.' || c == ':' || c == '@' || c == '^' || c == '_';
 }
 
-bool_t handle_simple_commands(string_t buff, command_t s, unsigned int wc){
+bool_t handle_simple_commands(string_t buff, command_t* s, unsigned int wc){
   char** word = checked_malloc(sizeof (char*) * wc);
-  s = checked_malloc(sizeof (struct command)); 
-  command_new (s, SIMPLE_COMMAND, -1, NULL, NULL,(void*)word); 
-
+  *s = checked_malloc(sizeof (struct command));
+  command_new (*s, SIMPLE_COMMAND, -1, NULL, NULL,(void*)&word);
+  //printf("%d\n", word);
+  //printf(*s->u.word);
   size_t start = 0;
   size_t end = 0;
   size_t word_count = 0;
   char c = '\0';
   for (size_t it = 0; it < buff->length; it++){
     string_get_char(buff, it, &c);
+    //printf("%d\n", c);
+    //printf("%d\n", buff->length);
     if (c == '\0'){
-      string_to_new_cstring(buff, word[word_count],start,end);//creating a new string
+      string_to_new_cstring(buff, &word[word_count],start,end);//creating a new string
+      //printf(word[word_count]);
       word_count++;
-      end = start = end+1;
+      start = end + 1;
+      end = start;
+      //printf("%d\n", start);
     }
     else
       end++;
   }
+   
+  //printf("%d\n", s);
   return TRUE;
 }
 //handles most* opperators
 bool_t handle_operator(stack_t command_stack, stack_t opp_stack, char* opp){
   char* c = "NOT (";
-  stack_top(opp_stack, c);
+  stack_top(opp_stack, &c);
 
   while (!stack_empty(opp_stack) && strcmp(c, "(") != 0 && precedence(c, opp) > -1){
     opp_handle_stacks(command_stack, opp_stack);
-    stack_top(opp_stack, c);
+    stack_top(opp_stack, &c);
   }
   stack_push(opp_stack, &opp);
   return TRUE;
@@ -247,9 +276,10 @@ make_command_stream (int (*get_next_byte) (void *),
   unsigned int paren_count = 0; //counts paren
   unsigned int new_line_count = 0; //new line count
   unsigned int line_number = 1;
-  bool_t opp_bool = TRUE; //there was an operator before
-  bool_t checked_next = FALSE; //we checked the next character so don't read in another
+  bool_t opp_bool = TRUE; //there was an operator before, true first because a char cant begin with opp
+  bool_t checked_next = FALSE; //bool that we checked the next character so don't read in another
 
+  //buffer for string 
   string_t simple_buffer = checked_malloc(sizeof(struct string));
   string_new(simple_buffer);
   char curr_byte = 0;
@@ -264,40 +294,45 @@ make_command_stream (int (*get_next_byte) (void *),
   stack_t opp_stack = checked_malloc(sizeof(struct stack));
   stack_new(opp_stack, sizeof(char*));
 
-  
-  
-  while (curr_byte >= != EOF){
-    if (!checked_next)
-      curr_byte = get_next_byte(get_next_byte_argument);
-    checked_next = FALSE;
-   /* 
+
+  curr_byte = get_next_byte(get_next_byte_argument); 
+  //looking through every byte
+  while (curr_byte != EOF){
+   
+    //printf("%c\n", curr_byte);
     if (curr_byte ==  '('){
       if (!opp_handle_new_lines(&new_line_count, opp_stack, command_stack, c_trees, &opp_bool))
-      fprintf(stderr, "%d:FUCK YOU",line_number );
-      stack_push(opp_stack, &"(");
-      paren_count++;
-      opp_bool = TRUE;
+        fprintf(stderr, "%d:( new line handle failed\n",line_number );
+        stack_push(opp_stack, &"(");
+        paren_count++;
+        opp_bool = TRUE;
+      
     }
     else if (curr_byte ==  ')'){
+
       //handling new line
       if (!opp_handle_new_lines(&new_line_count, opp_stack, command_stack, c_trees, &opp_bool))
-        fprintf(stderr, "%dFUCK YOU", line_number);//TODO ERROR HERE
-      if (stack_empty(opp_stack))
-        fprintf(stderr, "%dFUCK YOU", line_number); // TODO
+        fprintf(stderr, "%d:) new line handle failed\n", line_number);//TODO ERROR HER
       char* temp;
-      stack_top(opp_stack, temp);
-      // NOTE: might be able to do this as a function (opp_handle_stacks but modified)
+      printf("%d\n", opp_stack->n_elements);
+      if (!stack_top(opp_stack, &temp))
+        fprintf(stderr, "%d:) missing ( to match", line_number); // TODO
+      // NOTE: might be able to do this as a function (opp_handle_stacks but modified) 
+      printf(temp);
+      return;
       while (strcmp(temp, "(") != 0){
         if (!opp_handle_stacks(command_stack, opp_stack))
-          fprintf(stderr, "%dFUCK YOU", line_number);
-        stack_top(opp_stack, temp);
+          fprintf(stderr, "%d:failed to find matching (", line_number);
+        
+        stack_top(opp_stack, &temp);
       }
-
+    
+      return; 
       //popping top off which is (
       stack_pop(opp_stack, &temp);
       paren_count--;
       opp_bool = FALSE;
-
+    
       //the top of command stack will be the subshell command
       command_t new_subshell_command = checked_malloc(sizeof(struct command));
       command_t subshell_command;
@@ -305,15 +340,16 @@ make_command_stream (int (*get_next_byte) (void *),
       command_new(new_subshell_command, SUBSHELL_COMMAND, -1, NULL, NULL, (void*)&subshell_command);
       stack_push(command_stack, &new_subshell_command);
     }
+    
     else if (curr_byte == '#'){
       //reading bytes until end of file or new line
-      while ((curr_byte = get_next_byte(get_next_byte_argument))>= 0 && 
+      while ((curr_byte = get_next_byte(get_next_byte_argument)) != EOF && 
           curr_byte != '\n')
         continue;
       //since you attempted to read to EOF, you need to see if there are errors
-      if (curr_byte < 0){
+      if (curr_byte == EOF){
         if (paren_count > 0 || opp_bool)
-          fprintf(stderr, "%dFUCK YOU", line_number);
+          fprintf(stderr, "%d:EOF before ) or ended with operator\n", line_number);
       }
       checked_next = TRUE;
     }
@@ -326,31 +362,34 @@ make_command_stream (int (*get_next_byte) (void *),
       //you want to keep popping stack and creating a subtree command since
       //this has the smallest precedence
       if (!operator_check(command_stack, opp_bool))
-        fprintf(stderr, "%dFUCK YOU", line_number); 
+        fprintf(stderr, "%d: consecutive opperator before ;\n", line_number); 
       handle_operator(command_stack, opp_stack, ";");
     }
     else if (curr_byte ==  '|'){
       if (!operator_check(command_stack, opp_bool))
-        fprintf(stderr, "%dFUCK YOU", line_number);
-      if ((curr_byte = get_next_byte(get_next_byte_argument) >= 0 && curr_byte == '|')){
+        fprintf(stderr, "%dconsecutive operator before |", line_number);
+      curr_byte = get_next_byte(get_next_byte_argument);
+      if ((curr_byte != EOF && curr_byte == '|')){
         handle_operator(command_stack, opp_stack, "||");  
       }
       else{
-        if (curr_byte < 0)
-          fprintf(stderr, "%dFUCK YOU", line_number);
+        if (curr_byte == EOF)
+          fprintf(stderr, "%dEOF after reading pipe\n", line_number);
         checked_next = TRUE;
-        //handle_operator(command_stack, opp_stack, "|")
+        handle_operator(command_stack, opp_stack, "|");
         //we don't need to call because | has highest precedence
-        stack_push(opp_stack, &"|");
+        //stack_push(opp_stack, &"|");
+
 
       } 
       opp_bool = TRUE;
     }
     else if (curr_byte == '&'){
+      printf("HANDLING &");
       if (!operator_check(command_stack, opp_bool))
-        fprintf(stderr, "%dFUCK YOU", line_number);
-      if (!(curr_byte = get_next_byte(get_next_byte_argument) >= 0 && curr_byte == '&'))
-        fprintf(stderr, "%dFUCK YOU", line_number);
+        fprintf(stderr, "%d:opp check for & failed!", line_number);
+      if (!(curr_byte = get_next_byte(get_next_byte_argument) != EOF && curr_byte == '&'))
+        fprintf(stderr, "%d:2nd character is not & or EOF", line_number);
       //don't need to checked_next because & comes in pairs
       handle_operator(command_stack, opp_stack, "&&");
     }
@@ -358,14 +397,14 @@ make_command_stream (int (*get_next_byte) (void *),
       char current = curr_byte;
       //handling different types of IO redirects
       char curr_byte = get_next_byte(get_next_byte_argument);
-      if (curr_byte >= 0) {
+      if (curr_byte != EOF) {
         if (curr_byte == '>' || curr_byte == '&')
           curr_byte = get_next_byte(get_next_byte_argument);
         else if (current == '>' && curr_byte == '|')
           curr_byte = get_next_byte(get_next_byte_argument);
       }
       else
-        fprintf(stderr, "%dFUCK YOU", line_number);
+        fprintf(stderr, "%dEOF while trying to find file for io\n", line_number);
 
       // remove extra whitespace
       while (curr_byte == ' ' || curr_byte == '\t') {
@@ -382,51 +421,81 @@ make_command_stream (int (*get_next_byte) (void *),
       //creating file out of buffer
       char* f = NULL;
       //pls
-      string_to_new_cstring(simple_buffer, f, 0, simple_buffer->length);
+      string_to_new_cstring(simple_buffer, &f, 0, simple_buffer->length);
       if (current == '>')   
         command_set_io(com, f, OUTPUT);
       else
         command_set_io(com, f, INPUT);
-
       stack_push(command_stack, &com);
       string_clear(simple_buffer);
       checked_next = TRUE;
     }
-    */
-    //else{
+    
+    else{
       bool_t curr_whitespace = TRUE;
       unsigned int word_count = 0;
       //keep reading in character into simple buffer
-      while ((curr_byte = get_next_byte(get_next_byte_argument)) != EOF){
-        printf("\n%c", curr_byte);
-        continue;
-        if (!curr_whitespace && (curr_byte == ' ' || curr_byte == '\t')){
+      while (curr_byte != EOF){
+        if ((curr_byte == ' ' || curr_byte == '\t')){
+          if (!curr_whitespace){
           //push a null byte
-          word_count++;
-          string_append_char(simple_buffer, '\0');
-          curr_whitespace = TRUE;
+              word_count++;
+              string_append_char(simple_buffer, '\0');
+              curr_whitespace = TRUE;
+        
+          }
         }
         else {
-          curr_whitespace = FALSE; 
+          //printf("%c\n", curr_byte);
           if (is_command_char(curr_byte)){
+            opp_bool = FALSE;
             string_append_char(simple_buffer, curr_byte);
           } 
-          else if (is_operator(curr_byte) || curr_byte == '\n'){
-            word_count++;
+          else if (is_operator(curr_byte)){
+            if (!curr_whitespace)
+              word_count++;
             string_append_char(simple_buffer, '\0');
             checked_next = TRUE;
+            break;
           }
           else
-            fprintf(stderr, "%dFUCK YOU", line_number);  
+            fprintf(stderr, "%d:invalid character(%c) in script\n", line_number, curr_byte);  
+          curr_whitespace = FALSE;           
         }
+        curr_byte = get_next_byte(get_next_byte_argument); 
       }
-      //command_t simple = NULL;
-      //handle_simple_commands(simple_buffer,simple,  word_count);
-      //stack_push(command_stack, simple);
-//    }
-
-  } //while
+      //if the last thing you read was NOT a whitespace, you need to finish that
+      //word, so you appedn a null byte
+      if (curr_byte == EOF && !curr_whitespace){
+        string_append_char(simple_buffer, '\0');
+        word_count++;
+      }
+      //adding simple command
+      command_t simple;
+      handle_simple_commands(simple_buffer,&simple,  word_count);
+      //printf("%d\n", simple->u.word[1]);
+      stack_push(command_stack, &simple);
+    }
+  //printf("ENERING: %c:%d\n", curr_byte, command_stack->n_elements);
+ 
+    if (!checked_next){
+      curr_byte = get_next_byte(get_next_byte_argument);
+    }
   
+    checked_next = FALSE;
+  } //while
+
+  //NOT EXACTLY RIGHT
+
+  //return;
+  if (!stack_empty(command_stack)){
+    command_t test;
+    stack_top(command_stack, &test);
+    if(!create_new_command_tree(command_stack, opp_stack,c_trees))  
+        fprintf(stderr, "%d:command_stack not empty after creating tree\n", line_number);
+  }
+
+
   string_delete(simple_buffer);
   free(simple_buffer);
   
@@ -439,12 +508,44 @@ make_command_stream (int (*get_next_byte) (void *),
   return c_trees;
 }
 
+void print_command_stream(command_stream_t t){
+  //printf("%d", t->n_commands);
+  command_t c;
+  vector_get(t->command_trees, 0, &c);
+  //print_command(c);
+  //printf("%d", c->u.word+1);
+   
+  switch (c->type){
+    
+    //case SIMPLE_COMMAND:
+    case AND_COMMAND:
+      printf("this is an && statement");
+      break;
+    case SEQUENCE_COMMAND:
+      printf("this is a sequence statement");
+      break;
+    case OR_COMMAND:
+      printf("this is an || statement");
+      break;
+    case PIPE_COMMAND:
+      printf("this is an | statement");
+      break;
+    case SUBSHELL_COMMAND:
+      printf("YES");
+      break;
+    default:
+      printf("NO");
+      break;
+     
+  }
+  
+}
+
 
 
   command_t
 read_command_stream (command_stream_t s)
 {
-
 
   /* FIXME: Replace this with your implementation too.  */
   error (1, 0, "command reading not yet implemented");

@@ -28,7 +28,7 @@ void vector_set(vector_t s, size_t index, void* source){
 
 bool_t vector_get(vector_t s, size_t index, void* dest){
   if (index < s->n_elements){//not a very good check
-    void* offset = (void*)((char*)s->elements + index*s->ELEMENT_SIZE); //converting to byte size for (char*)
+    void* offset = (void*)((char*)s->elements + index*s->ELEMENT_SIZE); //converting to byte size for (char*):V
     memcpy(dest, offset, s->ELEMENT_SIZE);
     return TRUE;
   }

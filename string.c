@@ -92,24 +92,13 @@ bool_t string_get_char(string_t s, size_t index, char* c){
   return vector_get(s->v_string, index, c);
 }
 
-void string_test(){
-  string_t s = malloc(sizeof(struct string));
-  string_new(s);
-  //string_append(s, "alkjdskfj");
-  
-  for (int x = 0; x < 200; x++){
-    string_append_char(s, (char)x);
-
+void string_print(string_t s){
+  char c;
+  //printf("%d\n", s->length);
+  for (unsigned int x = 0; x < s->length; x++){
+    string_get_char(s,x, &c);
+    printf("%c", c);
   }
-
-  //string_append_char(s, 'a');
-  //string_append_char(s, 'b');
-  string_append_char(s,'\0' );
-  char*c ;
-  string_to_new_cstring(s,&c, 0, s->length);
-  printf("%d\n", s->length);
-  printf(c);
-  string_delete(s);
-  free(s);
-  free(c);
+  printf("\n");
 }
+

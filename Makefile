@@ -6,7 +6,7 @@ LAB = 1
 DISTDIR = lab1-$(USER)
 
 all: 
-	$(CC) -std=c99 $(TIMETRASH_SOURCES)
+	$(CC) $(CFLAGS) -std=c99 $(TIMETRASH_SOURCES)
 Debug: 
 	$(CC) -c $(TIMETRASH_SOURCES)
 
