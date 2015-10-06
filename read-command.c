@@ -506,6 +506,13 @@ void parse_command_tree(string_t cln_string, command_stream_t tree){
       }  
     }
   }//else for all non simple characters
+  stack_delete(com_stack);
+  stack_delete(op_stack);
+  string_delete(simple_buff);
+
+  free(com_stack);
+  free(op_stack);
+  free(simple_buff);
 }
   
   command_stream_t
