@@ -436,7 +436,8 @@ void parse_command_tree(string_t cln_string, command_stream_t tree){
         if (curr_char == '\0')
           word_count++;
       }
-      i--;
+      if (i < cln_string->length -1)
+        i--;
       command_t new_simple = checked_malloc(sizeof(struct command));
       opp_create_simple_command(simple_buff, new_simple, word_count);
       stack_push(com_stack, &new_simple);
