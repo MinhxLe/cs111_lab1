@@ -11,7 +11,7 @@ struct string{
 void string_new(string_t s);
 void string_new_cstring(string_t s, char* str);
 void string_delete(string_t s);
-void string_append(string_t s, char* str);
+void string_append(string_t s, char* str, unsigned int x);
 void string_append_char(string_t s, char ch);
 void string_clear(string_t s);
 

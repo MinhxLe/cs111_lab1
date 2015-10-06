@@ -267,7 +267,7 @@ void opp_add_new_command_tree(stack_t command_stack, stack_t opp_stack,
           //not last character
           //TODO IF It's \n ' ' \n
           if (string_get_char(raw_string, ++i, &curr_char) && curr_char == '\n'){
-            string_append(finished_string, "\n\n");
+            string_append(finished_string, "\n\n", 2);
           }
           else{
             string_append_char(finished_string, ';');
@@ -357,7 +357,7 @@ void opp_add_new_command_tree(stack_t command_stack, stack_t opp_stack,
             }
             else if (curr_char == '&'){
               if (string_get_char(raw_string, ++i, &curr_char) && curr_char == '&')
-                string_append(finished_string, "&&");
+                string_append(finished_string, "&&", 2);
               else {
                 fprintf(stderr, "%d: Char after & is not &", line_number);
                 exit(0);
@@ -366,7 +366,7 @@ void opp_add_new_command_tree(stack_t command_stack, stack_t opp_stack,
             else if (curr_char == '|'){
               //check if ||
               if (string_get_char(raw_string, ++i, &curr_char) && curr_char == '|'){
-                string_append(finished_string, "||");
+                string_append(finished_string, "||", 2);
               }
               else{
                 string_append_char(finished_string,'|'); 
@@ -400,7 +400,7 @@ void opp_add_new_command_tree(stack_t command_stack, stack_t opp_stack,
         string_get_char(finished_string, finished_string->length - 1, &prev);
         //can end with a sequence operator
         if (prev == ';'){
-          string_append(finished_string, "\n\n");
+          string_append(finished_string, "\n\n", 2);
         }
         else{
         fprintf(stderr, "%d: extra operator", line_number);
@@ -408,7 +408,7 @@ void opp_add_new_command_tree(stack_t command_stack, stack_t opp_stack,
         }
       }
       if (at_simple_command) 
-        string_append(finished_string, "\0\n\n");
+        string_append(finished_string, "\0\n\n", 3);
   }
 
 //SHOULD ALWAYS WORK BECAUSE YOUR INPUTED STRING IS VALID
@@ -540,7 +540,7 @@ make_command_stream (int (*get_next_byte) (void *),
   command_stream_t m_tree = checked_malloc(sizeof(struct command_stream));
   command_stream_new(m_tree);
   parse_command_tree(clean_string, m_tree); 
-  //freeing everything
+  //TODO freeing everything
 
 
   return m_tree;

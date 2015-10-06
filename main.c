@@ -59,12 +59,7 @@ main (int argc, char **argv)
   command_t last_command = NULL;
   command_t command = checked_malloc(sizeof(struct command));
   
-  printf("%d", command_stream->n_commands);
   vector_get(command_stream->command_trees, 0, & command);
-  //printf(command->u.word[0]);
-  //print_command(command);
-  return 0;
-  //now we print out the command_t for every command?j
   while ((command = read_command_stream (command_stream)))
     {
       if (print_tree)

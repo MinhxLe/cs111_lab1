@@ -28,12 +28,10 @@ void string_delete(string_t s){
 }
 
 
-void string_append(string_t s, char* str){
-  int counter = 0;
-  while (str[counter] != '\0'){
+void string_append(string_t s, char* str, unsigned int x){
+  for (unsigned int counter = 0; counter < x; counter++){
     vector_set(s->v_string, s->length, str + counter);
     s->length++;
-    counter++;
   }
 }
 //TODO CHECK THIS
