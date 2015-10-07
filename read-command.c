@@ -290,6 +290,10 @@ void clean_raw_buffer (string_t raw_string, string_t finished_string) {
 
             }
             else if (curr_char == '<'){
+                  if (at_simple_command){
+                    string_append_char(finished_string, '\0');//ending
+                    at_simple_command = FALSE;
+                }
                 if (prev_oper || !handled_io) {
                     fprintf(stderr, "%d: Consecutive operators (<)", line_number);
                     exit(0);
@@ -301,6 +305,10 @@ void clean_raw_buffer (string_t raw_string, string_t finished_string) {
                 handled_io = FALSE;
             }
             else if (curr_char == '>'){
+                  if (at_simple_command){
+                    string_append_char(finished_string, '\0');//ending
+                    at_simple_command = FALSE;
+                }
                 if (prev_oper || !handled_io) {
                     fprintf(stderr, "%d: Consecutive operators (>)", line_number);
                     exit(0);
@@ -495,6 +503,7 @@ void parse_command_tree(string_t cln_string, command_stream_t tree){
             }
             else if (curr_char == '<' || curr_char == '>'){
                 char temp = curr_char;
+                string_get_char(cln_string, ++i, &curr_char);
                 while(curr_char != '\0'){//signifying end of file
                     string_append_char(simple_buff, curr_char);
                     string_get_char(cln_string, ++i, &curr_char);
