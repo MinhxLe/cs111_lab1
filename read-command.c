@@ -61,8 +61,10 @@ void command_set_io(command_t c, char* file, char r){
     switch(r){
         case '<':
             c->input = file;
+            break;
         case '>':
             c->output = file;
+            break;
     }
 }
 
