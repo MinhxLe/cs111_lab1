@@ -73,5 +73,7 @@ main (int argc, char **argv)
 	}
     }
 
+  command_stream_delete(command_stream);
+  free(command_stream);
   return print_tree || !last_command ? 0 : command_status (last_command);
 }

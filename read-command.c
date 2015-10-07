@@ -81,9 +81,6 @@ void command_stream_new(command_stream_t m_command_stream){
     vector_new(m_command_stream->command_trees, sizeof(command_t));
 }
 
-void command_stream_delete(command_stream_t cs){
-    free(cs->command_trees); 
-}
 
 //COPIES
 void command_stream_add(command_stream_t s, command_t* c){
@@ -191,7 +188,7 @@ void opp_create_simple_command(string_t buff, command_t s, unsigned int wc){
             end++;
     }
     //append a null string at the end
-    word[word_count++] = NULL;
+    word[word_count] = NULL;
 
 }
 
@@ -301,8 +298,6 @@ void clean_raw_buffer (string_t raw_string, string_t finished_string) {
                 }
                 if (prev_oper || !handled_io) {
                     error(1, 0, "%d: consecutive operators(<)", line_number);
-                    fprintf(stderr, "%d: Consecutive operators (<)", line_number);
-                    exit(1);
                 }
                 if (!(string_get_char(raw_string, ++i, &curr_char) &&
                             (curr_char == '>' || curr_char == '&')))
@@ -317,8 +312,6 @@ void clean_raw_buffer (string_t raw_string, string_t finished_string) {
                 }
                 if (prev_oper || !handled_io) {
                     error(1, 0, "%d: consecutive operators (>)", line_number);
-                    fprintf(stderr, "%d: Consecutive operators (>)", line_number);
-                    exit(1);
                 }
                 if (!(string_get_char(raw_string, ++i, &curr_char) &&
                             (curr_char == '>' || curr_char == '&' || curr_char == '|')))
@@ -344,13 +337,9 @@ void clean_raw_buffer (string_t raw_string, string_t finished_string) {
                         paren_count--;
                     else {
                         error(1, 0, "%d: close paren ) without a matching open paren (", line_number);
-                        fprintf(stderr, "%d: Close paren ) without a matching open paren (", line_number);
-                        exit(1);
                     }
                     if (prev_oper) {
                         error(1, 0, "%d: close paren ) following an operator", line_number);
-                        fprintf(stderr, "%d: Close paren ) following an operator", line_number);
-                        exit(1);//ERROR
                     }
                     prev_oper = FALSE;
                     string_append_char(finished_string, ')');
@@ -361,8 +350,6 @@ void clean_raw_buffer (string_t raw_string, string_t finished_string) {
                     //true for all operators
                     if (prev_oper) {
                         error(1, 0, "%d: consecutive operator", line_number);
-                        fprintf(stderr, "%d: Consecutive operator", line_number);
-                        exit(1);//ERROR
                     }
                     prev_oper = TRUE;
 
@@ -375,8 +362,6 @@ void clean_raw_buffer (string_t raw_string, string_t finished_string) {
                             string_append(finished_string, "&&", 2);
                         else {
                             error(1, 0, "%d: char after & is not &", line_number);
-                            fprintf(stderr, "%d: Char after & is not &", line_number);
-                            exit(1);
                         }
                     }
                     else if (curr_char == '|'){
@@ -394,8 +379,6 @@ void clean_raw_buffer (string_t raw_string, string_t finished_string) {
                 else 
                 {
                     error(1,0, "%d: invalid character", line_number);
-                    fprintf(stderr, "%d: Invalid character", line_number);
-                    exit(1);
                 }
             }
         }
@@ -409,13 +392,9 @@ void clean_raw_buffer (string_t raw_string, string_t finished_string) {
     //paren count
     if (paren_count > 0){
         error(1, 0, "%d: extra (", line_number);
-        fprintf(stderr, "%d: extra (", line_number);
-        exit(1);
     }
     if (!handled_io){ 
         error(1, 0, "%d: did not handle io", line_number);
-        fprintf(stderr, "%d: did not handle io", line_number);
-        exit(1);
     }
 
     //extra ops (excluding ;)
@@ -432,8 +411,6 @@ void clean_raw_buffer (string_t raw_string, string_t finished_string) {
         }
         else{
             error(1, 0, "%d: extra operator", line_number);
-            fprintf(stderr, "%d: extra operator", line_number);
-            exit(1);
         }
     }
     if (at_simple_command) 
@@ -570,7 +547,10 @@ make_command_stream (int (*get_next_byte) (void *),
     command_stream_new(m_tree);
     parse_command_tree(clean_string, m_tree); 
     //TODO freeing everything
-    
+    string_delete(raw_string);
+    string_delete(clean_string);
+    free(raw_string);
+    free(clean_string);
 
     return m_tree;
 }
@@ -592,5 +572,38 @@ read_command_stream (command_stream_t s)
     }
     else
         return NULL;
+}
+
+void delete_command_tree(command_t s){
+switch(s->type){
+    unsigned int x;
+    case SIMPLE_COMMAND:
+        x = 0;
+        while (s->u.word[x] != NULL){
+            free(s->u.word[x]);
+            x++;
+        }
+        free(s);
+        break;
+    case SUBSHELL_COMMAND:
+        delete_command_tree(s->u.subshell_command);
+        free(s);
+        break;
+    default:
+        delete_command_tree(s->u.command[0]);
+        delete_command_tree(s->u.command[1]);
+        free(s);
+}
+
+}
+
+
+void command_stream_delete(command_stream_t t){
+    for (unsigned int x = 0; x < t->n_commands; x++ ){
+        command_t s;
+        vector_get(t->command_trees, x,&s);
+        delete_command_tree(s); 
+    }
+    vector_delete(t->command_trees);
 }
 
