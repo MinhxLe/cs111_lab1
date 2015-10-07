@@ -169,7 +169,7 @@ void opp_handle_stacks(stack_t command_stack, stack_t opp_stack){
 }
 
 void opp_create_simple_command(string_t buff, command_t s, unsigned int wc){
-    char** word = checked_malloc(sizeof (char*) * wc);
+    char** word = checked_malloc(sizeof (char*) * wc+1);
     command_new (s, SIMPLE_COMMAND, -1, NULL, NULL,(void*)&word);
     //printf("%d\n", word);
     //printf(*s->u.word);
@@ -187,7 +187,10 @@ void opp_create_simple_command(string_t buff, command_t s, unsigned int wc){
         }
         else
             end++;
-    } 
+    }
+    //append a null string at the end
+    word[word_count++] = NULL;
+
 }
 
 
