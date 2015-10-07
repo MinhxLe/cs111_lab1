@@ -301,7 +301,7 @@ void clean_raw_buffer (string_t raw_string, string_t finished_string) {
                 }
                 if (prev_oper || !handled_io) {
                     fprintf(stderr, "%d: Consecutive operators (<)", line_number);
-                    exit(0);
+                    exit(1);
                 }
                 if (!(string_get_char(raw_string, ++i, &curr_char) &&
                             (curr_char == '>' || curr_char == '&')))
@@ -316,7 +316,7 @@ void clean_raw_buffer (string_t raw_string, string_t finished_string) {
                 }
                 if (prev_oper || !handled_io) {
                     fprintf(stderr, "%d: Consecutive operators (>)", line_number);
-                    exit(0);
+                    exit(1);
                 }
                 if (!(string_get_char(raw_string, ++i, &curr_char) &&
                             (curr_char == '>' || curr_char == '&' || curr_char == '|')))
@@ -342,11 +342,11 @@ void clean_raw_buffer (string_t raw_string, string_t finished_string) {
                         paren_count--;
                     else {
                         fprintf(stderr, "%d: Close paren ) without a matching open paren (", line_number);
-                        exit(0);
+                        exit(1);
                     }
                     if (prev_oper) {
                         fprintf(stderr, "%d: Close paren ) following an operator", line_number);
-                        exit(0);//ERROR
+                        exit(1);//ERROR
                     }
                     prev_oper = FALSE;
                     string_append_char(finished_string, ')');
@@ -357,7 +357,7 @@ void clean_raw_buffer (string_t raw_string, string_t finished_string) {
                     //true for all operators
                     if (prev_oper) {
                         fprintf(stderr, "%d: Consecutive operator", line_number);
-                        exit(0);//ERROR
+                        exit(1);//ERROR
                     }
                     prev_oper = TRUE;
 
@@ -370,7 +370,7 @@ void clean_raw_buffer (string_t raw_string, string_t finished_string) {
                             string_append(finished_string, "&&", 2);
                         else {
                             fprintf(stderr, "%d: Char after & is not &", line_number);
-                            exit(0);
+                            exit(1);
                         }
                     }
                     else if (curr_char == '|'){
@@ -385,9 +385,11 @@ void clean_raw_buffer (string_t raw_string, string_t finished_string) {
                     }
                 }
                 //unhandled characters
-                else {
+                else 
+                {
+                    error(1,0, "%d: invalid character", line_number);
                     fprintf(stderr, "%d: Invalid character", line_number);
-                    exit(0);
+                    exit(1);
                 }
             }
         }
@@ -401,11 +403,11 @@ void clean_raw_buffer (string_t raw_string, string_t finished_string) {
     //paren count
     if (paren_count > 0){
         fprintf(stderr, "%d: extra (", line_number);
-        exit(0);
+        exit(1);
     }
     if (!handled_io){ 
         fprintf(stderr, "%d: did not handle io", line_number);
-        exit(0);
+        exit(1);
     }
 
     //extra ops (excluding ;)
@@ -422,7 +424,7 @@ void clean_raw_buffer (string_t raw_string, string_t finished_string) {
         }
         else{
             fprintf(stderr, "%d: extra operator", line_number);
-            exit(0);
+            exit(1);
         }
     }
     if (at_simple_command) 
