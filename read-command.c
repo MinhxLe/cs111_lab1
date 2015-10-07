@@ -102,7 +102,7 @@ bool_t is_operator(char c) {
 
 bool_t is_command_char(char c){
     return ('0' <= c && c <= '9') || ('A' <= c && c<= 'Z') || ('a' <= c && c <= 'z') || 
-        c == '!' || c == '%' || c == ',' || c == '-' || c == '/' ||
+        c == '!' || c == '%' || c== '+'  || c == ',' || c == '-' || c == '/' ||
         c == '.' || c == ':' || c == '@' || c == '^' || c == '_';
 }
 /*
@@ -551,11 +551,9 @@ make_command_stream (int (*get_next_byte) (void *),
     //cleaning up the string
     string_t clean_string = checked_malloc(sizeof(struct string));
     string_new(clean_string);
-    string_print(clean_string);
     clean_raw_buffer(raw_string, clean_string);
     //creating a new command sream
     command_stream_t m_tree = checked_malloc(sizeof(struct command_stream));
-    string_print(clean_string);
     command_stream_new(m_tree);
     parse_command_tree(clean_string, m_tree); 
     //TODO freeing everything
