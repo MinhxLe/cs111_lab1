@@ -1,4 +1,26 @@
-This is a skeleton for CS 111 Lab 1.
+AUTHOR: Minh Le && Caroline Zhu
+DATE: 19:05 PM
 
-Replace this README file with notes on your implementation.
-Mentions any special features or limitations.
+LAB 1A
+OVERALL DESIGN:
+Data structures written
+stack, vector, dynamic string class
+
+Methods:
+clean_raw_buff
+We cleaned the raw buffer of bytes read in from the file first. This includes
+removing all excess whitespace(and replacing it with \0 to seperate words), 
+removing comments.
+As we did this we checked for grammar and exited the enitre program if something
+was wrong.
+We then returned a correct buffer representing the script.
+
+parse_command_tree
+We used two stacks holding command_t and opperators (similar to handling infix
+algebra) to create command tree.
+
+NOTES:
+for semicolons at the end, we ignored it since it did not make sense to have a
+    sequence command with only one command but it's not syntatically incorrect
+
+
