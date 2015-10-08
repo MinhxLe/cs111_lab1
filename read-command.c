@@ -352,7 +352,7 @@ clean_raw_buffer (string_t raw_string, string_t finished_string)
                 {
                   string_append_char (finished_string, '\0');//ending
                   at_simple_command = FALSE;
-              }‘
+              }
               if (prev_oper || !handled_io) 
                 {
                   error (1, 0, "%d: consecutive operators (>)", line_number);
