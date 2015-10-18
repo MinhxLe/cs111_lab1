@@ -7,6 +7,8 @@
 #include <sys/wait.h>
 #include <error.h>
 
+#include <stdio.h>
+
 /* FIXME: You may need to add #include directives, macro definitions,
    static function definitions, etc.  */
 
@@ -26,7 +28,8 @@ int rec_execute_command(command_t c){
                 exit(1);
             }
             else if (pid == 0){//child
-               execvp(c->u.word[0], c->u.word);
+                execvp(c->u.word[0], c->u.word);
+                exit(-1);
             }
             else{
                 //waiting for child to finish
@@ -38,12 +41,12 @@ int rec_execute_command(command_t c){
             rec_execute_command(c->u.command[0]);
             return rec_execute_command(c->u.command[1]);
         case(OR_COMMAND):
-            if (rec_execute_command(c->u.command[0]) == -1)
+            if (rec_execute_command(c->u.command[0]) == WEXITSTATUS(-1))
                 return rec_execute_command(c->u.command[1]);
             else
                 return 0;
         case(AND_COMMAND):
-            if (rec_execute_command(c->u.command[0]) == 0)
+            if (rec_execute_command(c->u.command[0]) == WEXITSTATUS(0))
                 return rec_execute_command(c->u.command[1]);
             else
                 return -1;
