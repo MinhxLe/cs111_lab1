@@ -1,1 +1,1 @@
-fail; echo hi
+cat < test.c
