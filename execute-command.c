@@ -3,6 +3,8 @@
 #include "command.h"
 #include "command-internals.h"
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <error.h>
 
 /* FIXME: You may need to add #include directives, macro definitions,
@@ -16,8 +18,22 @@ command_status (command_t c)
 
 int rec_execute_command(command_t c){
     switch (c->type){
-        case(SIMPLE_COMMAND):
-            return execvp(c->u.word[0], c->u.word+1);
+        case(SIMPLE_COMMAND):{
+            pid_t pid;
+            int status;
+            if ((pid = fork()) < 0){
+                //TODO ERROR FORKING
+                exit(1);
+            }
+            else if (pid == 0){//child
+               execvp(c->u.word[0], c->u.word);
+            }
+            else{
+                //waiting for child to finish
+                waitpid(pid, &status, 0);
+                return WEXITSTATUS(status); 
+            }
+        }
         case(SEQUENCE_COMMAND):
             rec_execute_command(c->u.command[0]);
             return rec_execute_command(c->u.command[1]);
