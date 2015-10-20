@@ -21,7 +21,7 @@ handle_io (command_t c)
   if (c->input != NULL)
     {
       if ((read_fd = open (c->input, O_RDONLY)) == -1)
-        error (1, 0, "ERROR SCRUB");
+        error (1, 0, "ERROR 6");
       dup2 (read_fd, 0);
     }
 
@@ -29,7 +29,7 @@ handle_io (command_t c)
     {
       if ((write_fd = open (c->output, O_WRONLY | O_TRUNC | O_CREAT,
                            S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR)) == -1)
-          error (1, 0, "ERROR SCRUB");
+          error (1, 0, "ERROR 7");
         
       dup2 (write_fd, 1);// set write_fd to pipe
     }   
@@ -54,7 +54,7 @@ rec_execute_command (command_t c)
           int status;
           //forking
           if ((pid = fork ()) == -1)
-            error (1, 0, "ERROR SCRUB");
+            error (1, 0, "ERROR 1");
           else if (pid == 0)
             {//child
               handle_io (c);
@@ -89,7 +89,7 @@ rec_execute_command (command_t c)
           int status;
           //forking
           if ((pid = fork ()) == -1)
-            error (1, 0, "ERROR SCRUB");
+            error (1, 0, "ERROR 2");
           else if (pid == 0)
             {//child
               handle_io (c);
@@ -110,12 +110,12 @@ rec_execute_command (command_t c)
         {
           int pipefd[2];
           if (pipe (pipefd) == -1)
-            error (1, 0, "ERROR SCRUB");
+            error (1, 0, "ERROR 3");
 
           pid_t write_pid, read_pid;
           //first we run the write pid code
           if ((write_pid = fork ()) == -1)
-            error(1,0,"ERROR SCRUB");
+            error(1,0,"ERROR 4");
           else if (write_pid == 0)
             {//child write pid
               close (pipefd[0]); //close read pipe 
@@ -134,7 +134,7 @@ rec_execute_command (command_t c)
 
               //handling read process now
               if ((read_pid = fork ()) == -1)
-                error(1,0,"ERROR SCRUB");
+                error(1,0,"ERROR 5");
               else if (read_pid == 0)
                 {
                   close (pipefd[1]);//close write fd

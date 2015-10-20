@@ -24,7 +24,7 @@ cat >test.exp <<'EOF'
   test
 EOF
 
-../timetrash -p test.sh >test.out 2>test.err || exit
+../timetrash test.sh >test.out 2>test.err || exit
 
 diff -u test.exp test.out || exit
 test ! -s test.err || {
