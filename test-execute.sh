@@ -9,19 +9,19 @@ mkdir "$tmp" || exit
 cd "$tmp" || exit
 
 cat >test.sh <<'EOF'
-echo hi && (wc && wc -l) < command-internals.h
+true || echo test1
+false || echo test2 > foo.txt
 
-echo test || fail
+(echo test5 && echo test6 && echo test8) | tr a-z A-Z > bar.txt
 
+wc < bar.txt && cat bar.txt
 EOF
 
 cat >test.exp <<'EOF'
-# 1
-  hi
-  	42 114 828
-  0
-# 2
-  test
+ 3  3 18
+TEST5
+TEST6
+TEST8
 EOF
 
 ../timetrash test.sh >test.out 2>test.err || exit
