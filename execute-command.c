@@ -19,7 +19,7 @@ void handle_io(command_t c){
    if (c->input != NULL){
         if((read_fd = open(c->input, O_RDONLY)) == -1){
                 //TODO error reading file
-                exit(1);
+                error(1,0,"ERROR SCRUB");
             }
           dup2(read_fd,0);
     }
@@ -28,7 +28,7 @@ void handle_io(command_t c){
         if((write_fd = open(c->output, O_WRONLY | O_TRUNC | O_CREAT,
                         S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR)) == -1){
             //TODO error reading file
-            exit(1);
+            error(1,0,"ERROR SCRUB");
         }
         dup2(write_fd, 1);//set write_fd to pipe
 
@@ -51,7 +51,7 @@ int rec_execute_command(command_t c){
             //forking
             if ((pid = fork()) == -1){
                 //TODO ERROR
-                exit(1);
+                error(1,0,"ERROR SCRUB");
             }
             else if (pid == 0){//child
                 handle_io(c);
@@ -88,7 +88,7 @@ int rec_execute_command(command_t c){
             //forking
             if ((pid = fork()) == -1){
                 //TODO ERROR
-                exit(1);
+                error(1,0,"ERROR SCRUB");
             }
             else if (pid == 0){//child
                 handle_io(c);
@@ -110,14 +110,14 @@ int rec_execute_command(command_t c){
             int pipefd[2];
             if (pipe(pipefd) == -1){
                 //TODO PIPE ERROR
-                exit(1);
+                error(1,0,"ERROR SCRUB");
             }
 
             pid_t write_pid, read_pid;
             //first we run the write pid code
             if ((write_pid = fork()) == -1){
                 //TODO error forking
-                exit(1);
+                error(1,0,"ERROR SCRUB");
             }
             else if (write_pid == 0){//child write pid
                 close(pipefd[0]); //close read pipe 
@@ -137,7 +137,7 @@ int rec_execute_command(command_t c){
                 //handling read process now
                 if ((read_pid = fork()) == -1){
                 //TODO
-                    exit(1);
+                    error(1,0,"ERROR SCRUB");
                 }
                 else if (read_pid == 0){
                     close(pipefd[1]);//close write fd
