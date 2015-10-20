@@ -1,1 +1,1 @@
-cat < test.c
+(wc -l) < README

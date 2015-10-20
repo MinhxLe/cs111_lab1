@@ -6,33 +6,35 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <error.h>
-
 #include <stdio.h>
+#include <fcntl.h>
 
-/* FIXME: You may need to add #include directives, macro definitions,
-   static function definitions, etc.  */
+#include <sys/stat.h>
+#include <sys/types.h>
 
-int
-exec_simple_command(command_t c){
-    pid_t pid;
-    int status;
-    int pipefd[2];
-    FILE *read_file, *write_file;
-    if (c->input != NULL || c->output != NULL){
-        if (pipe(pipefd) == -1){
-            //TODO ERROR
-            exit(1);
-        }
-        if (c-> input != NULL)
-            if((read_file = fopen(c->input, "r")) == -1){
+void handle_io(command_t c){
+    int read_fd = -1, write_fd = -1;
+     //creating a pipe
+
+   if (c->input != NULL){
+        if((read_fd = open(c->input, O_RDONLY)) == -1){
                 //TODO error reading file
                 exit(1);
             }
-                       
+          dup2(read_fd,0);
     }
 
-}
+    if (c->output != NULL){
+        if((write_fd = open(c->output, O_WRONLY | O_TRUNC | O_CREAT,
+                        S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR)) == -1){
+            //TODO error reading file
+            exit(1);
+        }
+        dup2(write_fd, 1);//set write_fd to pipe
 
+    }   
+    //don't need to close file because execvp will close file for you
+}
 
 
 int
@@ -44,33 +46,29 @@ command_status (command_t c)
 int rec_execute_command(command_t c){
     switch (c->type){
         case(SIMPLE_COMMAND):{
-            pid_t pid;
+              pid_t pid;
             int status;
-            
-            
-            
-            
-            
-            
-        
-            
-            
-            
-            
-            if ((pid = fork()) < 0){
-                //TODO ERROR FORKING
+            //forking
+            if ((pid = fork()) == -1){
+                //TODO ERROR
                 exit(1);
             }
             else if (pid == 0){//child
-                execvp(c->u.word[0], c->u.word);
-                exit(-1);
-            }
-            else{
-                //waiting for child to finish
+                handle_io(c);
+                execvp(c->u.word[0], c->u.word);    
+             }
+            else {//parent
+                 //waiting for child write process to finish writing
                 waitpid(pid, &status, 0);
-                return WEXITSTATUS(status); 
+                //error
+                if (WEXITSTATUS(status) == WEXITSTATUS(-1)){
+                    return WEXITSTATUS(status);
+                 }
             }
+            return 0;
         }
+        
+        
         case(SEQUENCE_COMMAND):
             rec_execute_command(c->u.command[0]);
             return rec_execute_command(c->u.command[1]);
@@ -84,8 +82,29 @@ int rec_execute_command(command_t c){
                 return rec_execute_command(c->u.command[1]);
             else
                 return -1;
-        case(SUBSHELL_COMMAND):
-            return rec_execute_command(c->u.subshell_command);
+        case(SUBSHELL_COMMAND):{
+              pid_t pid;
+            int status;
+            //forking
+            if ((pid = fork()) == -1){
+                //TODO ERROR
+                exit(1);
+            }
+            else if (pid == 0){//child
+                handle_io(c);
+                rec_execute_command(c->u.subshell_command);
+
+            }
+            else {//parent
+                 //waiting for child write process to finish writing
+                waitpid(pid, &status, 0);
+                //error
+                if (WEXITSTATUS(status) == WEXITSTATUS(-1)){
+                    return WEXITSTATUS(status);
+                 }
+            }
+            return 0;
+        }
         
         case (PIPE_COMMAND):{
             int pipefd[2];
@@ -93,8 +112,6 @@ int rec_execute_command(command_t c){
                 //TODO PIPE ERROR
                 exit(1);
             }
-
-
 
             pid_t write_pid, read_pid;
             //first we run the write pid code
@@ -125,7 +142,7 @@ int rec_execute_command(command_t c){
                 else if (read_pid == 0){
                     close(pipefd[1]);//close write fd
                     dup2(pipefd[0], 0);//set output pipe as stdin
-                    close(pipefd[1]);
+                    close(pipefd[0]);
                     rec_execute_command(c->u.command[1]);
                 }
 
