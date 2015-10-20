@@ -20,23 +20,19 @@ handle_io (command_t c)
 
   if (c->input != NULL)
     {
-      if((read_fd = open (c->input, O_RDONLY)) == -1)
-        {
-          error (1, 0, "ERROR SCRUB");
-        }
-        dup2 (read_fd, 0);
+      if ((read_fd = open (c->input, O_RDONLY)) == -1)
+        error (1, 0, "ERROR SCRUB");
+      dup2 (read_fd, 0);
     }
 
   if (c->output != NULL)
-  {
-    if((write_fd = open (c->output, O_WRONLY | O_TRUNC | O_CREAT,
-                         S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR)) == -1)
-      {
-        error (1, 0, "ERROR SCRUB");
-      }
-      
+    {
+      if ((write_fd = open (c->output, O_WRONLY | O_TRUNC | O_CREAT,
+                           S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR)) == -1)
+          error (1, 0, "ERROR SCRUB");
+        
       dup2 (write_fd, 1);// set write_fd to pipe
-  }   
+    }   
   // don't need to close file because execvp will close file for you
 }
 
@@ -98,6 +94,7 @@ rec_execute_command (command_t c)
             {//child
               handle_io (c);
               rec_execute_command (c->u.subshell_command);
+              exit (0);
             }
           else 
             {//parent

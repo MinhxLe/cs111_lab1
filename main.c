@@ -35,10 +35,10 @@ main (int argc, char **argv)
   for (;;)
     switch (getopt (argc, argv, "pt"))
       {
-      case 'p': print_tree = 1; break;
-      case 't': time_travel = 1; break;
-      default: usage (); break;
-      case -1: goto options_exhausted;
+        case 'p': print_tree = 1; break;
+        case 't': time_travel = 1; break;
+        default: usage (); break;
+        case -1: goto options_exhausted;
       }
  options_exhausted:;
 
@@ -57,23 +57,23 @@ main (int argc, char **argv)
     make_command_stream (get_next_byte, script_stream);
 
   command_t last_command = NULL;
-  command_t command = checked_malloc(sizeof(struct command));
+  command_t command = checked_malloc (sizeof (struct command));
   
   while ((command = read_command_stream (command_stream)))
     {
       if (print_tree)
-	{
-	  printf ("# %d\n", command_number++);
-	  print_command (command);
-	}
+      	{
+      	  printf ("# %d\n", command_number++);
+      	  print_command (command);
+      	}
       else
-	{
-	  last_command = command;
-	  execute_command (command, time_travel);
-	}
+      	{
+      	  last_command = command;
+      	  execute_command (command, time_travel);
+      	}
     }
 
-  command_stream_delete(command_stream);
-  free(command_stream);
+  command_stream_delete (command_stream);
+  free (command_stream);
   return print_tree || !last_command ? 0 : command_status (last_command);
 }
