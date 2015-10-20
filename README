@@ -32,7 +32,3 @@ LAB 1B:
 
 Concerns and Limitations:
   . We assumed that execvp would close any open files
-  . Subshell commands that contain multiple commands requiring inputs are not
-  	properly dealt with. 
-
-  	For example: (wc && wc -l) < foo.txt
