@@ -8,6 +8,7 @@
 #include <error.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <string.h>
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -57,6 +58,8 @@ rec_execute_command (command_t c)
             error (1, 0, "ERROR 1");
           else if (pid == 0)
             {//child
+              if (strcmp (c->u.word[0], "false") == 0)
+                exit (-1);
               handle_io (c);
               execvp (c->u.word[0], c->u.word);    
             }
@@ -122,6 +125,7 @@ rec_execute_command (command_t c)
               dup2 (pipefd[1], 1);
               close (pipefd[1]);//since we already set stdout to be this write fd 
               rec_execute_command (c->u.command[0]);
+              exit (0);
             }
           else
             {//parent process
@@ -141,6 +145,7 @@ rec_execute_command (command_t c)
                   dup2 (pipefd[0], 0);//set output pipe as stdin
                   close (pipefd[0]);
                   rec_execute_command (c->u.command[1]);
+                  exit (0);
                 }
 
               else
