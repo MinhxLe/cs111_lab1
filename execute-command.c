@@ -195,7 +195,7 @@ void f_dep_new(f_dep_t f, char* string, int type, int lvl){
     f->curr_level = lvl;
 }
 
-void f_dep_new(f_dep_t f){
+void f_dep_delete(f_dep_t f){
     free(f->file);
 
 }
@@ -206,7 +206,7 @@ void find_command_dependencies(vector_t dependencies, command_t c_tree){
             //add io files
             if (c_tree->input != NULL){
                 f_dep_t v = checked_malloc(sizeof(struct f_dep));
-                vector_append(dependencies, f_dep_new(v, c_tree->inputs, FILE_READ, -1));
+                vector_append(dependencies, f_dep_new(v, c_tree->input, FILE_READ, -1));
             }
 
             if (c_tree->output != NULL){
@@ -287,6 +287,7 @@ int find_command_level(command_t command, vector_t master_vector){
     for (int i = 0; i < depend->n_elements; i++){
         f_dep_t curr;
         vector_get(depend, i, curr);
+        f_dep_delete(curr);
         free(curr);
     }
     vector_delete(depend);
@@ -330,7 +331,8 @@ generate_levels_vector (command_stream_t commands, vector_t levels)
         }
     }
 
-  vector_delete(command_dep);
+  vector_delete (command_dep);
+  free (command_dep);
 }
 
 
