@@ -12,6 +12,10 @@
 
 #include <sys/stat.h>
 #include <sys/types.h>
+#include "alloc.h"
+#include "io_file.h"
+#include "vector.h"
+
 
 void 
 handle_io (command_t c)
@@ -167,9 +171,71 @@ rec_execute_command (command_t c)
     }
 }
 
+////////TODO: ORGANIZE LATER/////////
+#define FILE_READ 0
+#define FILE_WRITE 1
+
+struct file_dependency{
+    char * file;//we will need to copy the string from the command_t to 
+    
+    //we keep track of the current depend type/level based on the most recent
+    //use of this file
+    int curr_depend_type;
+    int curr_level;
+};
+
+
+
+int find_command_level(command_t command, vector_t depend_vector){
+//generate a vector of dependencies(level is unnecessary)
+//changes depend vector to reflect command_t dependency vector
+//return max level
+}
+
+
+void generate_levels_vector(command_stream_t commands, vector_t levels){
+    /*
+     *generate a vector(levels) of vectors of command_t to execute concurrently in a level)
+     */
+    //will use a temporary vectors of dependencies
+}
+
+
+
+
+
+void curr_execute_command_stream(){
+    //exectues and forks based on level
+}
+
+
+
 
 void
-execute_command (command_t c, int time_travel)
+execute_command_stream (command_stream_t c, int time_travel)
 {
-  rec_execute_command (c);
+    if (time_travel == 0){
+    //original loop
+    command_t last_command = NULL;
+    command_t command = checked_malloc (sizeof (struct command));
+
+    while ((command = read_command_stream (c)))
+    {
+          last_command = command;
+      	  rec_execute_command (command);
+    }
+    free(command);
+    } 
+  else{
+  //shit happens
+  /*
+   *for command trees 
+   *
+   *
+   *
+   */
+    exit(0); 
+  }
 }
+
+
