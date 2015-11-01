@@ -204,11 +204,23 @@ void find_command_dependencies(command_t c_tree, vector_t dependencies){
     switch (c_tree->type){
         case(SIMPLE_COMMAND):
             //add io files
-            if (c_tree->input != input)
+            if (c_tree->input != null){
+                f_dep_t v = checked_malloc(sizeof(struct f_dep));
+                vector_append(dependencies, f_dep_new(v, c_tree->inputs, FILE_READ, -1));
+            }
+
+            if (c_tree->output != null){
+                f_dep_t v = checked_malloc(sizeof(struct f_dep));
+                vector_append(dependencies, f_dep_new(v, c_tree->output, FILE_WRITE, -1));
+            }
             
-            
-            
-            
+            //1 because its an argument
+            for (int i = 1; c_tree->u[i] != NULL; i++){
+                if (c_trees->u[i][0] != '-'){
+                    f_dep_t v = checked_malloc(sizeof(struct f_dep));
+                    vector_append(dependencies, f_dep_new(v, c_tree->input, FILE_WRITE, -1));
+                }
+            }
             break;
         case (SEQUENCE_COMMAND):
         case (OR_COMMAND):
@@ -223,6 +235,10 @@ void find_command_dependencies(command_t c_tree, vector_t dependencies){
 }
 
 int find_command_level(command_t command, vector_t depend_vector){
+    
+    
+    
+    
 //generate a vector of dependencies(level is unnecessary)
 //changes depend vector to reflect command_t dependency vector
 //return max level
