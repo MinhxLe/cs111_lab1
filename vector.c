@@ -35,6 +35,12 @@ vector_set (vector_t s, size_t index, void* source)
   s->n_elements = index + 1;
 }
 
+void
+vector_append(vector_t s, void* source){
+    vector_set(s, s->n_elements, source);
+}
+
+
 bool_t
 vector_get (vector_t s, size_t index, void* dest)
 {

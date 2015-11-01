@@ -172,10 +172,11 @@ rec_execute_command (command_t c)
 }
 
 ////////TODO: ORGANIZE LATER/////////
+
 #define FILE_READ 0
 #define FILE_WRITE 1
 
-struct file_dependency{
+struct f_dep{
     char * file;//we will need to copy the string from the command_t to 
     
     //we keep track of the current depend type/level based on the most recent
@@ -184,7 +185,42 @@ struct file_dependency{
     int curr_level;
 };
 
+typedef struct f_dep* f_dep_t;
 
+
+void f_dep_new(f_dep_t f, char* string, int type, int lvl){
+    f->file = checked_malloc(sizeof(char)* (strlen(string) + 1));
+    strcpy(f->file, string);
+    f->curr_depend_type = type;
+    f->curr_level = lvl;
+}
+
+void f_dep_new(f_dep_t f){
+    free(f->file);
+
+}
+
+void find_command_dependencies(command_t c_tree, vector_t dependencies){
+    switch (c_tree->type){
+        case(SIMPLE_COMMAND):
+            //add io files
+            if (c_tree->input != input)
+            
+            
+            
+            
+            break;
+        case (SEQUENCE_COMMAND):
+        case (OR_COMMAND):
+        case (PIPE_COMMAND):
+            find_command_dependencies(c_trees->u.command[0], v);
+            find_command_dependencies(c_trees->u.command[1], v);
+            break;
+        case (SUBSHELL_COMMAND):
+            find_command_dependencies(c_trees->u.subshell_command, v);
+            break;
+    }
+}
 
 int find_command_level(command_t command, vector_t depend_vector){
 //generate a vector of dependencies(level is unnecessary)
