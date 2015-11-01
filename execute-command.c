@@ -296,41 +296,41 @@ int find_command_level(command_t command, vector_t master_vector){
 }
 
 
-void generate_levels_vector(command_stream_t commands, vector_t levels){
-    /*
-     *generate a vector(levels) of vectors of command_t to execute concurrently in a level)
-     */
-    //will use a temporary vectors of dependencies
+void
+generate_levels_vector (command_stream_t commands, vector_t levels)
+{
+  // levels is a vector containing vectors of commands
+  /*
+   *generate a vector(levels) of vectors of command_t to execute concurrently in a level)
+   */
+  // will use a temporary vectors of dependencies
 
-    int level = -1;
-    command_t command = checked_malloc (sizeof (struct command));
+  int level = -1;
+  command_t command = checked_malloc (sizeof (struct command));
 
-    vector_t command_dep = checked_malloc (sizeof (struct vector));;
-    vector_new (m_command_stream->command_trees, sizeof (struct f_dep));
+  vector_t temp_command;
+  vector_t command_dep = checked_malloc (sizeof (struct vector));;
+  vector_new (command_dep, sizeof (struct f_dep));
 
-    vector_t file_list = checked_malloc (sizeof (struct vector));;
-    vector_new (m_command_stream->command_trees, sizeof (char*));
+  while (command = read_command_stream (commands))
+    {
+      level = find_command_level (command, command_dep);
+      vector_get (levels, level, &temp_command);
+      if (temp_command == NULL)
+        {
+          vector_t file_dependencies = checked_malloc (sizeof (struct vector));;
+          vector_new (file_dependencies, sizeof (struct command));
+          vector_set (file_dependencies, file_dependencies->n_elements, &command);
 
-/*
-struct f_dep{
-    char * file;//we will need to copy the string from the command_t to 
-    
-    //we keep track of the current depend type/level based on the most recent
-    //use of this file
-    int curr_depend_type;
-    int curr_level;
-};
-*/
-    while ((command = read_command_stream (commands)))
-      {
-          level = find_command_level(command, command_dep);
-          // for each f_dep dep in command_dep
-          //    search in vector of strings
-          //        
-      }
+          vector_set (levels, level, &file_dependencies);
+        }
+      else 
+        {
+          vector_set (temp_command, temp_command->n_elements, &command);
+        }
+    }
 
-    free(command);
-    vector_delete(command_dep);
+  vector_delete(command_dep);
 }
 
 
