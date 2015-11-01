@@ -200,16 +200,16 @@ void f_dep_new(f_dep_t f){
 
 }
 
-void find_command_dependencies(command_t c_tree, vector_t dependencies){
+void find_command_dependencies(vector_t dependencies, command_t c_tree){
     switch (c_tree->type){
         case(SIMPLE_COMMAND):
             //add io files
-            if (c_tree->input != null){
+            if (c_tree->input != NULL){
                 f_dep_t v = checked_malloc(sizeof(struct f_dep));
                 vector_append(dependencies, f_dep_new(v, c_tree->inputs, FILE_READ, -1));
             }
 
-            if (c_tree->output != null){
+            if (c_tree->output != NULL){
                 f_dep_t v = checked_malloc(sizeof(struct f_dep));
                 vector_append(dependencies, f_dep_new(v, c_tree->output, FILE_WRITE, -1));
             }
@@ -234,14 +234,65 @@ void find_command_dependencies(command_t c_tree, vector_t dependencies){
     }
 }
 
-int find_command_level(command_t command, vector_t depend_vector){
-    
-    
-    
-    
+
+
 //generate a vector of dependencies(level is unnecessary)
 //changes depend vector to reflect command_t dependency vector
 //return max level
+int find_command_level(command_t command, vector_t master_vector){
+    //finding dependencies
+    int return_level = 0;
+    vector_t depend = checked_malloc(sizeof(struct vector));
+    find_command_dependencies(depend, c_tree);
+
+    //checking master master_vector
+     
+    f_dep_t command_curr, master_curr;
+    for (int i = 0; i < depend->n_elements; i++){
+        //TODO use a hashtable...
+        vector_get(depend,i, command_curr);
+        for (int j = 0; j < master_vector->n_elements;j++){
+            //getting the 2 elements 
+            vector_get(master_vector, j, master_curr);
+
+            //comparing 2 strings
+            if (!strcmp(command_curr->file, master_curr->file)){
+                //reading after write
+                if (master_curr->curr_depend_type == FILE_WRITE ||command_curr->curr_depend_type == FILE_WRITE){
+                    //+1 because you're one level AFTER
+                    if (master_curr->curr_level + 1 > return_level)
+                        return_level = master_curr->curr_level + 1;
+                }
+                else{
+                    if (master_curr->curr_level > return_level)
+                        return_level = master_curr->curr_level;
+                }
+            }
+        }
+    }
+    //changing master vector
+    for (int i = 0; i < depend->n_elements; i++){
+        //TODO use a hashtable...
+        vector_get(depend,i, command_curr);
+        for (int j = 0; j < master_vector->n_elements;j++){
+            //getting the 2 elements 
+            vector_get(master_vector, j, master_curr);
+                if (!strcmp(command_curr->file, master_curr->file)){
+                    master_curr->curr_level = return_level;
+                    master_curr->curr_depend_type command_curr->curr_depend_type; 
+                }
+        }
+    }
+    //freeing all memory   
+    for (int i = 0; i < depend->n_elements; i++){
+        f_dep_t curr;
+        vector_get(depend, i, curr);
+        free(curr);
+    }
+    vector_delete(depend);
+    free(depend);
+
+    return return_level;
 }
 
 
