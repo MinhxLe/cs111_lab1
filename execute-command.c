@@ -301,6 +301,36 @@ void generate_levels_vector(command_stream_t commands, vector_t levels){
      *generate a vector(levels) of vectors of command_t to execute concurrently in a level)
      */
     //will use a temporary vectors of dependencies
+
+    int level = -1;
+    command_t command = checked_malloc (sizeof (struct command));
+
+    vector_t command_dep = checked_malloc (sizeof (struct vector));;
+    vector_new (m_command_stream->command_trees, sizeof (struct f_dep));
+
+    vector_t file_list = checked_malloc (sizeof (struct vector));;
+    vector_new (m_command_stream->command_trees, sizeof (char*));
+
+/*
+struct f_dep{
+    char * file;//we will need to copy the string from the command_t to 
+    
+    //we keep track of the current depend type/level based on the most recent
+    //use of this file
+    int curr_depend_type;
+    int curr_level;
+};
+*/
+    while ((command = read_command_stream (commands)))
+      {
+          level = find_command_level(command, command_dep);
+          // for each f_dep dep in command_dep
+          //    search in vector of strings
+          //        
+      }
+
+    free(command);
+    vector_delete(command_dep);
 }
 
 
