@@ -320,6 +320,8 @@ levels_vector_new (command_stream_t commands, vector_t levels)
    */
   // will use a temporary vectors of dependencies
 
+  vector_new(levels, sizeof(vector_t));
+
   int level = -1;
   command_t command = checked_malloc (sizeof (struct command));
 
