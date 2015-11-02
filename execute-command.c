@@ -14,7 +14,7 @@
 #include <sys/types.h>
 #include "alloc.h"
 #include "vector.h"
-
+#include "declarations.h"
 
 void 
 handle_io (command_t c)
@@ -276,15 +276,25 @@ int find_command_level(command_t command, vector_t master_vector){
     for (unsigned int i = 0; i < depend->n_elements; i++){
         //TODO use a hashtable...
         vector_get(depend, i, &command_curr);
+        
+        bool_t found = FALSE;
         for (unsigned int j = 0; j < master_vector->n_elements;j++){
             //getting the 2 elements 
             vector_get(master_vector, j, &master_curr);
                 if (!strcmp(command_curr->file, master_curr->file)){
                     master_curr->curr_level = return_level;
                     master_curr->curr_depend_type = command_curr->curr_depend_type; 
+                    found = TRUE;
                 }
         }
+        if (!found){ 
+            master_curr = checked_malloc(sizeof(struct f_dep));
+            f_dep_new(master_curr, command_curr->file, command_curr->curr_depend_type, return_level );
+            vector_set(master_vector, master_vector->n_elements, &master_curr);
+        }
     }
+    
+    
     //freeing all memory   
     for (unsigned int i = 0; i < depend->n_elements; i++){
         f_dep_t curr = NULL;
@@ -312,6 +322,8 @@ levels_vector_new (command_stream_t commands, vector_t levels)
   command_t command = checked_malloc (sizeof (struct command));
 
   vector_t temp_command;
+  
+  //master vector
   vector_t command_dep = checked_malloc (sizeof (struct vector));;
   vector_new (command_dep, sizeof (struct f_dep));
 
@@ -350,16 +362,56 @@ void levels_vector_delete(vector_t levels){
 
 
 
-void p_execute_command_stream(command_stream_t c){
+int p_execute_command_stream(command_stream_t c){
     //generate all the levels
     vector_t levels = checked_malloc(sizeof(struct vector));
-    
-    levels_vector_new(levels, 
+    levels_vector_new(c, levels);
 
+
+    vector_t curr_levels = checked_malloc(sizeof(struct vector));
+    vector_new(curr_levels, sizeof(command_t));
+
+    for (unsigned int i = 0; i < levels->n_elements; i++){
+        //getting vector of command_t
+        vector_get(levels, i, &curr_levels); 
+        //a new process to run all the command_t
+        pid_t pid;
+        int status;
+        
+        if ((pid = fork()) == -1)
+            error(1,0, "fork error");
+        else if (pid == 0){
+            //child
+            pid_t c_pid;
+            
+            command_t curr = NULL;
+            for (unsigned int j = 0; j < curr_levels->n_elements; j++){
+                if ((c_pid = fork()) == -1)
+                    error(1,0, "fork error");
+                else if (c_pid == 0){
+                    vector_get(curr_levels, j, &curr);
+                    rec_execute_command(curr);
+                    //no need to exit the pid 
+                }
+                //parent will just continue the loop!
+            }
+        }
+        else{
+            waitpid(pid, &status, 0);
+            if (WEXITSTATUS(status) == WEXITSTATUS(-1))
+                return WEXITSTATUS(status);
+        
+        }
+
+    
+    }
+
+    vector_delete(curr_levels);
+    free(curr_levels);
 
     levels_vector_delete(levels);
-
-    
+    free (levels);
+    return 0; 
 }
 
 
@@ -382,14 +434,8 @@ execute_command_stream (command_stream_t c, int time_travel)
     free(command);
     } 
   else{
-  //shit happens
-  /*
-   *for command trees 
-   *
-   *
-   *
-   */
-    exit(0); 
+    //TODO ERROR
+      p_execute_command_stream(c);
   }
 }
 
