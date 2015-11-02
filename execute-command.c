@@ -206,21 +206,21 @@ void find_command_dependencies(vector_t dependencies, command_t c_tree){
             if (c_tree->input != NULL){
                 f_dep_t v = checked_malloc(sizeof(struct f_dep));
                 f_dep_new(v, c_tree->input, FILE_READ, -1);
-                vector_append(dependencies,v);
+                vector_append(dependencies,&v);
             }
 
             if (c_tree->output != NULL){
                 f_dep_t v = checked_malloc(sizeof(struct f_dep));
                 f_dep_new(v, c_tree->output, FILE_WRITE, -1);
-                vector_append(dependencies,v);
+                vector_append(dependencies,&v);
             }
             
             //1 because its an argument
             for (int i = 1; c_tree->u.word[i] != NULL; i++){
                 if (c_tree->u.word[i][0] != '-'){
                     f_dep_t v = checked_malloc(sizeof(struct f_dep));
-                    f_dep_new(v, c_tree->input, FILE_WRITE, -1);
-                    vector_append(dependencies, v);
+                    f_dep_new(v, c_tree->u.word[i], FILE_READ, -1);
+                    vector_append(dependencies, &v);
                 }
             }
             break;
@@ -245,6 +245,8 @@ int find_command_level(command_t command, vector_t master_vector){
     //finding dependencies
     int return_level = 0;
     vector_t depend = checked_malloc(sizeof(struct vector));
+    vector_new(depend, sizeof(f_dep_t));
+
     find_command_dependencies(depend, command);
 
     //checking master master_vector
@@ -321,20 +323,19 @@ levels_vector_new (command_stream_t commands, vector_t levels)
   int level = -1;
   command_t command = checked_malloc (sizeof (struct command));
 
-  vector_t temp_command;
+  vector_t temp_command = NULL;
   
   //master vector
   vector_t command_dep = checked_malloc (sizeof (struct vector));;
-  vector_new (command_dep, sizeof (struct f_dep));
+  vector_new (command_dep, sizeof (f_dep_t));
 
   while ((command = read_command_stream (commands)))
     {
       level = find_command_level (command, command_dep);
-      vector_get (levels, level, &temp_command);
-      if (temp_command == NULL)
+      if (!vector_get (levels, level, &temp_command))
         {
           vector_t file_dependencies = checked_malloc (sizeof (struct vector));;
-          vector_new (file_dependencies, sizeof (struct command));
+          vector_new (file_dependencies, sizeof (command_t));
           vector_set (file_dependencies, file_dependencies->n_elements, &command);
 
           vector_set (levels, level, &file_dependencies);
@@ -345,6 +346,7 @@ levels_vector_new (command_stream_t commands, vector_t levels)
         }
     }
 
+  free(command);
   vector_delete (command_dep);
   free (command_dep);
 }
