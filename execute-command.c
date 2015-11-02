@@ -252,10 +252,10 @@ int find_command_level(command_t command, vector_t master_vector){
     f_dep_t command_curr = NULL, master_curr = NULL;
     for (unsigned int i = 0; i < depend->n_elements; i++){
         //TODO use a hashtable...
-        vector_get(depend,i, command_curr);
+        vector_get(depend, i, &command_curr);
         for (unsigned int j = 0; j < master_vector->n_elements;j++){
             //getting the 2 elements 
-            vector_get(master_vector, j, master_curr);
+            vector_get(master_vector, j, &master_curr);
 
             //comparing 2 strings
             if (!strcmp(command_curr->file, master_curr->file)){
@@ -275,10 +275,10 @@ int find_command_level(command_t command, vector_t master_vector){
     //changing master vector
     for (unsigned int i = 0; i < depend->n_elements; i++){
         //TODO use a hashtable...
-        vector_get(depend,i, command_curr);
+        vector_get(depend, i, &command_curr);
         for (unsigned int j = 0; j < master_vector->n_elements;j++){
             //getting the 2 elements 
-            vector_get(master_vector, j, master_curr);
+            vector_get(master_vector, j, &master_curr);
                 if (!strcmp(command_curr->file, master_curr->file)){
                     master_curr->curr_level = return_level;
                     master_curr->curr_depend_type = command_curr->curr_depend_type; 
@@ -288,7 +288,7 @@ int find_command_level(command_t command, vector_t master_vector){
     //freeing all memory   
     for (unsigned int i = 0; i < depend->n_elements; i++){
         f_dep_t curr = NULL;
-        vector_get(depend, i, curr);
+        vector_get(depend, i, &curr);
         f_dep_delete(curr);
         free(curr);
     }
