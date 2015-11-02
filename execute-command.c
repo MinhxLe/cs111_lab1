@@ -323,7 +323,7 @@ levels_vector_new (command_stream_t commands, vector_t levels)
   vector_new(levels, sizeof(vector_t));
 
   int level = -1;
-  command_t command = checked_malloc (sizeof (struct command));
+  command_t command = NULL; 
 
   vector_t temp_command = NULL;
   
@@ -348,18 +348,19 @@ levels_vector_new (command_stream_t commands, vector_t levels)
         }
     }
 
-  free(command);
   vector_delete (command_dep);
   free (command_dep);
 }
 
 void levels_vector_delete(vector_t levels){
     vector_t temp = NULL;
+    
     for (unsigned int x = 0; x < levels->n_elements; x++){
         vector_get(levels, x, &temp); 
         vector_delete(temp);
         free(temp);
     }
+    
     vector_delete(levels);
 }
 
@@ -386,34 +387,39 @@ int p_execute_command_stream(command_stream_t c){
             error(1,0, "fork error");
         else if (pid == 0){
             //child
-            pid_t c_pid;
-            
+            unsigned int child_count = curr_levels->n_elements;
+            pid_t pids[child_count];
             command_t curr = NULL;
-            for (unsigned int j = 0; j < curr_levels->n_elements; j++){
-                if ((c_pid = fork()) == -1)
+            for (unsigned int j = 0; j < child_count; j++){
+                vector_get(curr_levels, j, &curr);
+                if ((pids[i] = fork()) == -1)
                     error(1,0, "fork error");
-                else if (c_pid == 0){
-                    vector_get(curr_levels, j, &curr);
-                    rec_execute_command(curr);
-                    //no need to exit the pid 
+                else if (pids[i] == 0){
+                    exit(rec_execute_command(curr));
                 }
-                //parent will just continue the loop!
             }
+            //parent process waits for all children
+            int status2;
+            while (child_count > 0){
+                wait(&status2);
+                if (WEXITSTATUS(status) == WEXITSTATUS(-1))
+                    exit(status);
+                child_count--; 
+            }
+            exit(0);
         }
         else{
             waitpid(pid, &status, 0);
             if (WEXITSTATUS(status) == WEXITSTATUS(-1))
                 return WEXITSTATUS(status);
         
-        }
-
-    
+        } 
     }
 
     vector_delete(curr_levels);
     free(curr_levels);
-
-    levels_vector_delete(levels);
+    //TODO ERROR BITCH
+    //levels_vector_delete(levels);
     free (levels);
     return 0; 
 }
