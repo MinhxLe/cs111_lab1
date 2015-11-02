@@ -206,21 +206,21 @@ void find_command_dependencies(vector_t dependencies, command_t c_tree){
             if (c_tree->input != NULL){
                 f_dep_t v = checked_malloc(sizeof(struct f_dep));
                 f_dep_new(v, c_tree->input, FILE_READ, -1);
-                vector_append(dependencies,v);
+                vector_append(dependencies, &v);
             }
 
             if (c_tree->output != NULL){
                 f_dep_t v = checked_malloc(sizeof(struct f_dep));
                 f_dep_new(v, c_tree->output, FILE_WRITE, -1);
-                vector_append(dependencies,v);
+                vector_append(dependencies, &v);
             }
             
             //1 because its an argument
             for (int i = 1; c_tree->u.word[i] != NULL; i++){
                 if (c_tree->u.word[i][0] != '-'){
                     f_dep_t v = checked_malloc(sizeof(struct f_dep));
-                    f_dep_new(v, c_tree->input, FILE_WRITE, -1);
-                    vector_append(dependencies, v);
+                    f_dep_new(v, c_tree->u.word[i], FILE_WRITE, -1);
+                    vector_append(dependencies, &v);
                 }
             }
             break;
