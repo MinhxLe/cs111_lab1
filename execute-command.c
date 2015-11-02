@@ -300,7 +300,7 @@ int find_command_level(command_t command, vector_t master_vector){
 
 
 void
-generate_levels_vector (command_stream_t commands, vector_t levels)
+levels_vector_new (command_stream_t commands, vector_t levels)
 {
   // levels is a vector containing vectors of commands
   /*
@@ -337,13 +337,31 @@ generate_levels_vector (command_stream_t commands, vector_t levels)
   free (command_dep);
 }
 
-
-
-
-
-void curr_execute_command_stream(){
-    //exectues and forks based on level
+void levels_vector_delete(vector_t levels){
+    vector_t temp = NULL;
+    for (unsigned int x = 0; x < levels->n_elements; x++){
+        vector_get(levels, x, &temp); 
+        vector_delete(temp);
+        free(temp);
+    }
+    vector_delete(levels);
 }
+
+
+
+
+void p_execute_command_stream(command_stream_t c){
+    //generate all the levels
+    vector_t levels = checked_malloc(sizeof(struct vector));
+    
+    levels_vector_new(levels, 
+
+
+    levels_vector_delete(levels);
+
+    
+}
+
 
 
 
