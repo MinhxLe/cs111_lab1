@@ -205,34 +205,37 @@ void find_command_dependencies(vector_t dependencies, command_t c_tree){
             //add io files
             if (c_tree->input != NULL){
                 f_dep_t v = checked_malloc(sizeof(struct f_dep));
-                vector_append(dependencies, f_dep_new(v, c_tree->input, FILE_READ, -1));
+                f_dep_new(v, c_tree->input, FILE_READ, -1);
+                vector_append(dependencies,v);
             }
 
             if (c_tree->output != NULL){
                 f_dep_t v = checked_malloc(sizeof(struct f_dep));
-                vector_append(dependencies, f_dep_new(v, c_tree->output, FILE_WRITE, -1));
+                f_dep_new(v, c_tree->output, FILE_WRITE, -1);
+                vector_append(dependencies,v);
             }
             
             //1 because its an argument
-            for (int i = 1; c_tree->u[i] != NULL; i++){
-                if (c_trees->u[i][0] != '-'){
+            for (int i = 1; c_tree->u.word[i] != NULL; i++){
+                if (c_tree->u.word[i][0] != '-'){
                     f_dep_t v = checked_malloc(sizeof(struct f_dep));
-                    vector_append(dependencies, f_dep_new(v, c_tree->input, FILE_WRITE, -1));
+                    f_dep_new(v, c_tree->input, FILE_WRITE, -1);
+                    vector_append(dependencies, v);
                 }
             }
             break;
         case (SEQUENCE_COMMAND):
         case (OR_COMMAND):
+        case (AND_COMMAND):
         case (PIPE_COMMAND):
-            find_command_dependencies(c_trees->u.command[0], v);
-            find_command_dependencies(c_trees->u.command[1], v);
+            find_command_dependencies(dependencies, c_tree->u.command[0]);
+            find_command_dependencies(dependencies, c_tree->u.command[1]);
             break;
         case (SUBSHELL_COMMAND):
-            find_command_dependencies(c_trees->u.subshell_command, v);
+            find_command_dependencies(dependencies, c_tree->u.subshell_command);
             break;
     }
 }
-
 
 
 //generate a vector of dependencies(level is unnecessary)
@@ -242,15 +245,15 @@ int find_command_level(command_t command, vector_t master_vector){
     //finding dependencies
     int return_level = 0;
     vector_t depend = checked_malloc(sizeof(struct vector));
-    find_command_dependencies(depend, c_tree);
+    find_command_dependencies(depend, command);
 
     //checking master master_vector
      
-    f_dep_t command_curr, master_curr;
-    for (int i = 0; i < depend->n_elements; i++){
+    f_dep_t command_curr = NULL, master_curr = NULL;
+    for (unsigned int i = 0; i < depend->n_elements; i++){
         //TODO use a hashtable...
         vector_get(depend,i, command_curr);
-        for (int j = 0; j < master_vector->n_elements;j++){
+        for (unsigned int j = 0; j < master_vector->n_elements;j++){
             //getting the 2 elements 
             vector_get(master_vector, j, master_curr);
 
@@ -270,21 +273,21 @@ int find_command_level(command_t command, vector_t master_vector){
         }
     }
     //changing master vector
-    for (int i = 0; i < depend->n_elements; i++){
+    for (unsigned int i = 0; i < depend->n_elements; i++){
         //TODO use a hashtable...
         vector_get(depend,i, command_curr);
-        for (int j = 0; j < master_vector->n_elements;j++){
+        for (unsigned int j = 0; j < master_vector->n_elements;j++){
             //getting the 2 elements 
             vector_get(master_vector, j, master_curr);
                 if (!strcmp(command_curr->file, master_curr->file)){
                     master_curr->curr_level = return_level;
-                    master_curr->curr_depend_type command_curr->curr_depend_type; 
+                    master_curr->curr_depend_type = command_curr->curr_depend_type; 
                 }
         }
     }
     //freeing all memory   
-    for (int i = 0; i < depend->n_elements; i++){
-        f_dep_t curr;
+    for (unsigned int i = 0; i < depend->n_elements; i++){
+        f_dep_t curr = NULL;
         vector_get(depend, i, curr);
         f_dep_delete(curr);
         free(curr);
@@ -312,7 +315,7 @@ generate_levels_vector (command_stream_t commands, vector_t levels)
   vector_t command_dep = checked_malloc (sizeof (struct vector));;
   vector_new (command_dep, sizeof (struct f_dep));
 
-  while (command = read_command_stream (commands))
+  while ((command = read_command_stream (commands)))
     {
       level = find_command_level (command, command_dep);
       vector_get (levels, level, &temp_command);
