@@ -600,9 +600,62 @@ void command_dep_vector_new(vector_t command_deps, command_stream_t){
 }
 */
 
-void parallel_execute_command_stream(command_stream_t c){
-    //create a vector of command_dep_t out of command_stream_t
-    
+int parallel_execute_command_stream(command_stream_t c){
+  //create a vector of command_dep_t out of command_stream_t
+  command_dep command_d = NULL; 
+  
+  // command dependencies
+  vector_t command_dependencies = checked_malloc (sizeof (struct vector));
+  vector_new (command_dependencies, sizeof (command_dep));
+  command_dep_vector_new (command_dependencies, c);
+
+  // temp variable used in the loop; didn't want to create and destroy multiple times
+  int dependence = -1;
+
+  // contains all pids of child processes
+  pid_t pid[command_dependencies->n_elements];
+
+  // loop through all the commands
+  for (int i = 0; i < command_dependencies->n_elements; i++)
+    {
+      // parent forks each child
+      if ((pid[i] = fork ()) == -1)
+        error (1, 0, "fork error");
+      else if (pid[i] == 0) // child process
+        {
+          // get the command_dep at command_dependencies[i]
+          vector_get (command_dependencies, i, command_d);
+
+          // wait on all unfinished dependencies
+          // processes can depend on only command trees before them
+          // therefore, no check to see if the process has already been forked
+              // (all prior processes should already exist)
+          for (int j = 0; j < command_d->dependencies->n_elements; j++)
+            {
+              vector_get (command_d->dependencies, j, dependence);
+              
+              waitpid (pid[dependence], &status, WNOWAIT);
+              if (WEXITSTATUS (status) == WEXITSTATUS (-1))
+                exit (WEXITSTATUS (status));
+            }
+
+          // if it gets here, then all its dependencies must have been completed
+          exit (rec_execute_command (command_d->command));
+        }
+    } // for loop
+
+  // kill all processes now that they've all completed
+  for (int i = 0; i < command_dependencies->n_elements; i++)
+    {
+      waitpid (pid, &status, 0);
+      if (WEXITSTATUS (status) == WEXITSTATUS (-1))
+        return -1;
+    }
+
+  vector_delete (command_dependencies);
+  free (command_dependencies);    
+
+  return 0;
 }
 
 
@@ -630,5 +683,3 @@ execute_command_stream (command_stream_t c, int time_travel)
       p_execute_command_stream(c);
   }
 }
-
-
