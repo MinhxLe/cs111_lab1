@@ -423,6 +423,24 @@ int p_execute_command_stream(command_stream_t c){
     free (levels);
     return 0; 
 }
+//////////////////////////////////////////////
+//              REDOING                 //////
+//////////////////////////////////////////////
+
+struct command_dep{
+    command_t command;//command that is to be run
+    vector_t dependencies;//vector of ints of pos it depends on
+}
+typedef struct command_dep* command_dep_t;
+
+
+//creates a new vector of command_deps
+void command_dep_vector_new(vector_t command_deps, command_stream_t)
+
+void parallel_execute_command_stream(command_stream_t c){
+    //create a vector of command_dep_t out of command_stream_t
+}
+
 
 
 
