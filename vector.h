@@ -15,7 +15,7 @@ void vector_delete(vector_t s);
 void vector_set(vector_t s, size_t index, void* source);
 void vector_append(vector_t s, void* source);
 void vector_get_elements(vector_t v, void* start);
-
+void vector_clear(vector_t v);
 
 bool_t vector_get(vector_t s, size_t index, void* dest);
 

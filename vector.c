@@ -92,3 +92,12 @@ vector_test()
   vector_delete(v);
   free(v);
 }
+
+void vector_clear(vector_t v){
+    if (v == NULL)
+        return;
+    v->n_elements = 0;
+
+    v->N_MAX_ELEMENTS = 8;
+    v->elements = (void*)checked_realloc (es * s->N_MAX_ELEMENTS);
+}
