@@ -423,6 +423,7 @@ int p_execute_command_stream(command_stream_t c){
     free (levels);
     return 0; 
 }
+/*
 //////////////////////////////////////////////
 //              REDOING                 //////
 //////////////////////////////////////////////
@@ -494,12 +495,14 @@ void find_command_dependencies(vector_t dependencies, command_t c_tree){
 
 struct command_dep{
     command_t command;//command that is to be run
+    int rank;
     vector_t dependencies;//vector of ints of pos it depends on
 }
 typedef struct command_dep* command_dep_t;
 
-void command_dep_new(command_dep_t c, command_t com){
+void command_dep_new(command_dep_t c, command_t com, int r){
     c->command = com;
+    c->rank = r;
     c->dependencies = checked_malloc(sizeof(struct vector));
     vector_new(c->dependencies, sizeof(int));
 }
@@ -546,7 +549,10 @@ void add_dependencies(f_dep_t depend, command_dep_t command_dep, vector_t master
         }
     }
     if (!found){
-           
+        //adding new dependency file in the vector
+        master_dep_t new = checked_malloc(sizeof(struct master_dep));
+        master_dep_new(new, depend->file);
+        
     }
 
 }
@@ -572,24 +578,14 @@ void command_dep_vector_new(vector_t command_deps, command_stream_t){
         command_dep_t curr_command_depend = checked_malloc(sizeof(struct command_dep));
         curr_command_depend->command = curr_command;
         
-
         find_command_dependencies(curr_depend_vect, curr_command);
         //for all dependencies
         for (unsigned int i = 0; i < curr_depend->n_elements; i++){
             vector_get(depend, i, &curr_depend);
-            //call seperate function
+            //adding dependencies to command and master depend if necssary
+            add_dependencies(curr_depend, curr_command_depend,master_depend);
         }
-
         
-        //for every command, find its command dependencies and then insert it in the
-    //master dependencies
-        //find all dependencies of of that curr_command (files read + type)
-        
-        //for all its dependency
-            //call seperate function
-            //
-        
-
         vector_clear(curr_depend);
     }
 
@@ -602,7 +598,7 @@ void command_dep_vector_new(vector_t command_deps, command_stream_t){
 
 
 }
-
+*/
 
 void parallel_execute_command_stream(command_stream_t c){
     //create a vector of command_dep_t out of command_stream_t
