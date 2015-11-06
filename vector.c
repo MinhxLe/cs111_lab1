@@ -91,7 +91,7 @@ bool_t vector_append_vector(vector_t dest, vector_t source){
 }
 
 bool_t vector_empty(vector_t v){
-return !!(v->n_elements);
+return (v->n_elements == 0);
 }
 void
 vector_test()

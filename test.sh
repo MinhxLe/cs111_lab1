@@ -1,6 +1,6 @@
 echo a
 
-#sort big.txt > sort.txt
+sort big.txt > sort.txt
 
 echo abc > small.txt
 
