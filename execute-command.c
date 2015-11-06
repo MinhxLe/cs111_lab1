@@ -1,4 +1,5 @@
 // UCLA CS 111 Lab 1 command execution
+#define _DEFAULT_SOURCE
 
 #include "command.h"
 #include "command-internals.h"
@@ -11,7 +12,6 @@
 #include <string.h>
 
 #include <sys/stat.h>
-#include <sys/types.h>
 #include "alloc.h"
 #include "vector.h"
 #include "declarations.h"
@@ -425,6 +425,7 @@ int parallel_execute_command_stream(command_stream_t c){
     // temp variable used in the loop; didn't want to create and destroy multiple times
     int dependence = -1;
     int status = 0;
+    siginfo_t info;
     // contains all pids of child processes
     pid_t pid[command_dependencies->n_elements];
 
@@ -447,26 +448,33 @@ int parallel_execute_command_stream(command_stream_t c){
                 // processes can depend on only command trees before them
                 // therefore, no check to see if the process has already been forked
                 // (all prior processes should already exist)
-                printf("waiting for %d processes\n", (int)command_d->dependencies->n_elements);
+                //printf("waiting for %d processes\n", (int)command_d->dependencies->n_elements);
                 for (unsigned int j = 0; j < command_d->dependencies->n_elements; j++)
                 {
                     vector_get (command_d->dependencies, j, &dependence);
-                    waitpid (pid[dependence], &status, WNOWAIT);
-                    if (WEXITSTATUS (status) == WEXITSTATUS (-1))
-                        exit (WEXITSTATUS (status));
+                    
+                    printf("waiting for %d\n", dependence);
+                    waitid (P_PID,pid[dependence], &info, WNOWAIT | WEXITED);
+
+                    if (WEXITSTATUS (info.si_status) == WEXITSTATUS (-1))
+                        exit (WEXITSTATUS (info.si_status));
                 }
 
                 // if it gets here, then all its dependencies must have been completed
-                exit (rec_execute_command (command_d->command));
+                exit(rec_execute_command (command_d->command));
             }
+
+            //parent
         } // for loop
 
     
         for (unsigned int j = 0; j < command_dependencies->n_elements; j++)
         {
-            waitpid (pid[j], &status, WNOWAIT);
-            if (WEXITSTATUS (status) == WEXITSTATUS (-1))
-                exit (WEXITSTATUS (status));
+            //printf("waiting for %d\n", pid[j]);
+            waitid (P_PID, pid[j], &info, WNOWAIT | WEXITED);
+
+            if (WEXITSTATUS (info.si_status) == WEXITSTATUS (-1))
+                exit (WEXITSTATUS (info.si_status));
         }
         printf("FINISHED WAITING");
         exit(0); 
@@ -475,21 +483,20 @@ int parallel_execute_command_stream(command_stream_t c){
     }
     //parent
     waitpid(child,&status, 0);
-
     if (WEXITSTATUS (status) == WEXITSTATUS (-1)){
         exit (WEXITSTATUS (status));
     }
 
 
     // kill all zombie processes now that they've all completed
-    /*
+    
        for (unsigned int i = 0; i < command_dependencies->n_elements; i++)
        {
        waitpid (pid[i], &status, 0);
        if (WEXITSTATUS (status) == WEXITSTATUS (-1))
        return -1;
        }
-       */
+    
     command_dep_vector_delete (command_dependencies);
     free (command_dependencies);    
     return 0;
