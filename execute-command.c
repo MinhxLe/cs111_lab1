@@ -746,21 +746,23 @@ void handle_dep(file_dep_t dependency, command_dep_t command, vector_t master_de
     master_file_dep_t master_curr = NULL;
     for (unsigned int j = 0; j < master_deps->n_elements; j++){
         vector_get(master_deps,j, &master_curr); 
-            //found a match
-            if (!strcmp(dependency->file, master_curr->file)){
-                //after write or WRITE
-                if (master_curr->curr_depend_type == WRITE_DEP || dependency->depend_type == WRITE_DEP){
-                    //adding new dependency                
-                    command_dep_add_dependency(command, master_curr->curr_command_dep);
-                    //changing master
-                    master_file_dep_change_curr(master_curr, command->index, dependency->depend_type);
-                }
-                //only thing left is concurrent read
-                else { 
-                    command_dep_add_dependency(command, master_curr->prev_command_dep);
-                    vector_append(master_curr-> curr_command_dep, &(command->index));
-                }
-                found = 1;
+        //found a match
+        if (!strcmp(dependency->file, master_curr->file)){
+            //after write or WRITE
+            if (master_curr->curr_depend_type == WRITE_DEP || dependency->depend_type == WRITE_DEP){
+                //adding new dependency                
+                command_dep_add_dependency(command, master_curr->curr_command_dep);
+                //changing master
+                master_file_dep_change_curr(master_curr, command->index, dependency->depend_type);
+            }
+            //only thing left is concurrent read
+            else { 
+                command_dep_add_dependency(command, master_curr->prev_command_dep);
+                vector_append(master_curr-> curr_command_dep, &(command->index));
+            }
+            found = 1;
+        }
+
     }
     //adding it to master then
     if (!found){
@@ -768,7 +770,6 @@ void handle_dep(file_dep_t dependency, command_dep_t command, vector_t master_de
         master_file_dep_change_curr(master_curr, command->index, dependency->depend_type); 
         vector_append(master_deps, &master_curr);
     }
-}
 }
     
     
@@ -798,6 +799,7 @@ void command_dep_vector_new(vector_t command_dep_vect, command_stream_t commands
         find_command_dependencies(curr_command_deps, curr_command);
         //for all dependencies
         for (unsigned int i = 0; i < curr_command_deps->n_elements; i++){
+
             vector_get(curr_command_deps,i, &curr_f_dep);
              //call a function to check in master dependency vector
             handle_dep(curr_f_dep, curr_command_dep, master_deps);          
@@ -866,8 +868,7 @@ int parallel_execute_command_stream(command_stream_t c){
                 // processes can depend on only command trees before them
                 // therefore, no check to see if the process has already been forked
                 // (all prior processes should already exist)
-
-                
+                printf("waiting for %d processes\n", (int)command_d->dependencies->n_elements);
                 for (unsigned int j = 0; j < command_d->dependencies->n_elements; j++)
                 {
                     vector_get (command_d->dependencies, j, &dependence);
