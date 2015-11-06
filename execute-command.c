@@ -613,13 +613,13 @@ void command_dep_vector_new(vector_t command_deps, command_stream_t){
 struct file_dep{
     char* file;
     int depend_type;
-}
+};
 
 typedef struct file_dep* file_dep_t;
 
 void file_dep_new(file_dep_t fp, char* f, int type){
-    fp->file = checked_malloc(sizeof(char)* (strlen(string) + 1));
-    strcpy(fp->file, string);
+    fp->file = checked_malloc(sizeof(char)* (strlen(f) + 1));
+    strcpy(fp->file, f);
     
     fp->depend_type = type;
 }
@@ -634,13 +634,13 @@ void find_command_dependencies(vector_t dependencies, command_t c_tree){
         case(SIMPLE_COMMAND):
             //add io files
             if (c_tree->input != NULL){
-                file_dep_t v = checked_malloc(sizeof(struct f_dep));
+                file_dep_t v = checked_malloc(sizeof(struct file_dep));
                 file_dep_new(v, c_tree->input, READ_DEP);
                 vector_append(dependencies, &v);
             }
 
             if (c_tree->output != NULL){
-                file_dep_t v = checked_malloc(sizeof(struct f_dep));
+                file_dep_t v = checked_malloc(sizeof(struct file_dep));
                 file_dep_new(v, c_tree->output, WRITE_DEP);
                 vector_append(dependencies, &v);
             }
@@ -648,7 +648,7 @@ void find_command_dependencies(vector_t dependencies, command_t c_tree){
             //1 because its an argument
             for (int i = 1; c_tree->u.word[i] != NULL; i++){
                 if (c_tree->u.word[i][0] != '-'){
-                    file_dep_t v = checked_malloc(sizeof(struct f_dep));
+                    file_dep_t v = checked_malloc(sizeof(struct file_dep));
                     file_dep_new(v, c_tree->u.word[i], READ_DEP);
                     vector_append(dependencies, &v);
                 }
@@ -681,8 +681,8 @@ struct command_dep{
     command_t command;
     int index;
     vector_t dependencies;
-}
-typedef struct command_dep_t* command_dep;
+};
+typedef struct command_dep* command_dep_t;
 
 void command_dep_new(command_dep_t com_dep, command_t c, int ind){
     com_dep->command = c;
@@ -713,8 +713,8 @@ struct master_file_dep{
 typedef struct master_file_dep* master_file_dep_t;
 
 void master_file_dep_new(master_file_dep_t fp, char* f){
-    fp->file = checked_malloc(sizeof(char)* (strlen(string) + 1));
-    strcpy(fp->file, string);
+    fp->file = checked_malloc(sizeof(char)* (strlen(f) + 1));
+    strcpy(fp->file, f);
     
     fp->prev_command_dep = checked_malloc(sizeof(struct vector));
     fp->curr_command_dep = checked_malloc(sizeof(struct vector));
@@ -736,29 +736,29 @@ void master_file_dep_change_curr(master_file_dep_t m, int new_dep, int new_dep_t
     vector_clear(temp);
     m->prev_command_dep = m->curr_command_dep;
     m->curr_command_dep = temp;
-    vector_append(m->curr_command, &new_dep);
+    vector_append(m->curr_command_dep, &new_dep);
     m->curr_depend_type = new_dep_type;
 }
 
 
-void handle_dep(f_dep_t dependency, command_dep_t command, vector_t master_deps ){
+void handle_dep(file_dep_t dependency, command_dep_t command, vector_t master_deps ){
     int found = 0;
     master_file_dep_t master_curr = NULL;
     for (unsigned int j = 0; j < master_deps->n_elements; j++){
-        vector_get(master_deps, &master_curr); 
+        vector_get(master_deps,j, &master_curr); 
             //found a match
             if (!strcmp(dependency->file, master_curr->file)){
                 //after write or WRITE
                 if (master_curr->curr_depend_type == WRITE_DEP || dependency->depend_type == WRITE_DEP){
                     //adding new dependency                
-                    command_dep_add_dependency(command, master_curr->curr_depend_type);
+                    command_dep_add_dependency(command, master_curr->curr_command_dep);
                     //changing master
                     master_file_dep_change_curr(master_curr, command->index, dependency->depend_type);
                 }
                 //only thing left is concurrent read
-                else if { 
-                    command_dep_add_dependency(command, master_curr->prev_depend_type);
-                    vector_append(master_curr-> curr_depend_type, &(command->index));
+                else { 
+                    command_dep_add_dependency(command, master_curr->prev_command_dep);
+                    vector_append(master_curr-> curr_command_dep, &(command->index));
                 }
                 found = 1;
     }
@@ -766,6 +766,7 @@ void handle_dep(f_dep_t dependency, command_dep_t command, vector_t master_deps 
     if (!found){
         master_file_dep_change_curr(master_curr, command->index, dependency->depend_type); 
     }
+}
 }
     
     
@@ -778,8 +779,8 @@ void command_dep_vector_new(vector_t command_dep_vect, command_stream_t commands
 
     //temporary command_dep needed for the loop(only want to create once)
     command_t curr_command = NULL;
-    vector_t curr_command_deps = checked_malloc(sizeof(file_dep_t));   
-    vector_new(curr_command_deps);
+    vector_t curr_command_deps = checked_malloc(sizeof(struct vector));  
+    vector_new(curr_command_deps, sizeof(file_dep_t));
 
     int curr_command_count = 0;
     file_dep_t curr_f_dep = NULL;
@@ -794,8 +795,8 @@ void command_dep_vector_new(vector_t command_dep_vect, command_stream_t commands
         //find all dependencies of this current command_t
         find_command_dependencies(curr_command_deps, curr_command);
         //for all dependencies
-        for (int i = 0; i < curr_command_deps->n_elements, curr_command){
-            vector_get(curr_command_deps, &curr_f_dep);
+        for (unsigned int i = 0; i < curr_command_deps->n_elements; i++){
+            vector_get(curr_command_deps,i, &curr_f_dep);
              //call a function to check in master dependency vector
             handle_dep(curr_f_dep, curr_command_dep, master_deps);          
         }
@@ -805,67 +806,95 @@ void command_dep_vector_new(vector_t command_dep_vect, command_stream_t commands
         curr_command_count ++;
         vector_clear(curr_command_deps);//clearing vector
     }
-
+    //clearing out master
+    master_file_dep_t temp = NULL;
+    for (unsigned int i = 0; i < master_deps->n_elements; i++){
+        vector_get(master_deps, i,&temp);
+        master_file_dep_delete(temp);
+        free(temp);
+    }
 
     vector_delete(master_deps);
-    free(master_deps)
+    free(master_deps);
+}
+
+void command_dep_vector_delete(vector_t command_dep){
+
+    command_dep_t temp = NULL;
+    for (unsigned int i = 0; i < command_dep->n_elements; i++){
+        vector_get(command_dep, i,&temp);
+        command_dep_delete(temp);
+        free(temp);
+    }
+    vector_delete(command_dep);
 }
 
 int parallel_execute_command_stream(command_stream_t c){
   //create a vector of command_dep_t out of command_stream_t
-  command_dep command_d = NULL; 
+  command_dep_t command_d = NULL; 
   
   // command dependencies
   vector_t command_dependencies = checked_malloc (sizeof (struct vector));
-  vector_new (command_dependencies, sizeof (command_dep));
+  vector_new (command_dependencies, sizeof (command_dep_t));
   command_dep_vector_new (command_dependencies, c);
+
 
   // temp variable used in the loop; didn't want to create and destroy multiple times
   int dependence = -1;
-
+  int status = 0;
   // contains all pids of child processes
   pid_t pid[command_dependencies->n_elements];
 
   // loop through all the commands
-  for (int i = 0; i < command_dependencies->n_elements; i++)
-    {
-      // parent forks each child
-      if ((pid[i] = fork ()) == -1)
-        error (1, 0, "fork error");
-      else if (pid[i] == 0) // child process
-        {
-          // get the command_dep at command_dependencies[i]
-          vector_get (command_dependencies, i, command_d);
+  pid_t child;
+  if ((child = fork()) == -1)
+      error (1, 0, "fork error");
+  else if (child == 0){
+      for (unsigned int i = 0; i < command_dependencies->n_elements; i++)
+      {
+          // parent forks each child
+          if ((pid[i] = fork ()) == -1)
+              error (1, 0, "fork error");
+          else if (pid[i] == 0) // child process
+          {
+              // get the command_dep at command_dependencies[i]
+              vector_get (command_dependencies, i, &command_d);
 
-          // wait on all unfinished dependencies
-          // processes can depend on only command trees before them
-          // therefore, no check to see if the process has already been forked
+              // wait on all unfinished dependencies
+              // processes can depend on only command trees before them
+              // therefore, no check to see if the process has already been forked
               // (all prior processes should already exist)
-          for (int j = 0; j < command_d->dependencies->n_elements; j++)
-            {
-              vector_get (command_d->dependencies, j, dependence);
-              
-              waitpid (pid[dependence], &status, WNOWAIT);
-              if (WEXITSTATUS (status) == WEXITSTATUS (-1))
-                exit (WEXITSTATUS (status));
-            }
+              for (unsigned int j = 0; j < command_d->dependencies->n_elements; j++)
+              {
+                  vector_get (command_d->dependencies, j, &dependence);
 
-          // if it gets here, then all its dependencies must have been completed
-          exit (rec_execute_command (command_d->command));
-        }
-    } // for loop
+                  waitpid (pid[dependence], &status, WNOWAIT);
+                  if (WEXITSTATUS (status) == WEXITSTATUS (-1))
+                      exit (WEXITSTATUS (status));
+              }
 
-  // kill all processes now that they've all completed
-  for (int i = 0; i < command_dependencies->n_elements; i++)
-    {
-      waitpid (pid, &status, 0);
+              // if it gets here, then all its dependencies must have been completed
+              exit (rec_execute_command (command_d->command));
+          }
+      } // for loop
+      exit(0);
+  }
+  waitpid(child,&status, 0);
+
+    if (WEXITSTATUS (status) == WEXITSTATUS (-1))
+        exit (WEXITSTATUS (status));
+
+
+  // kill all zombie processes now that they've all completed
+  for (unsigned int i = 0; i < command_dependencies->n_elements; i++)
+  {
+      waitpid (pid[i], &status, 0);
       if (WEXITSTATUS (status) == WEXITSTATUS (-1))
         return -1;
     }
 
-  vector_delete (command_dependencies);
+  command_dep_vector_delete (command_dependencies);
   free (command_dependencies);    
-
   return 0;
 }
 
