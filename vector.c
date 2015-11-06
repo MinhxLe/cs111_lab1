@@ -75,13 +75,13 @@ vector_get_elements (vector_t v, void* start)
   start = v->elements;
 }
 
-bool_t vector_append_vector(vector_t source, vector_t dest){
+bool_t vector_append_vector(vector_t dest, vector_t source){
     if (source == NULL || dest == NULL)
         return FALSE;
     if (source->ELEMENT_SIZE != dest->ELEMENT_SIZE)
         return FALSE;
     
-    checked_realloc(dest->elements, dest->ELEMENT_SIZE*(dest->n_elements+ source->n_elements));
+    dest->elements = (void*)checked_realloc(dest->elements, dest->ELEMENT_SIZE*(dest->n_elements+ source->n_elements));
     char* start = ((char*)dest->elements + dest->ELEMENT_SIZE * dest->n_elements);
     memcpy ((void*)start, (void*)source->elements, (source->n_elements)*dest->ELEMENT_SIZE);  
     dest->n_elements += source->n_elements;
@@ -112,7 +112,7 @@ void vector_clear(vector_t v){
     if (v == NULL)
         return;
     v->n_elements = 0;
-
-    v->N_MAX_ELEMENTS = 8;
-    v->elements = (void*)checked_realloc (v->elements, v->ELEMENT_SIZE * v->N_MAX_ELEMENTS);
+    //TODO why can't you shrink it
+    //v->N_MAX_ELEMENTS = 8;
+    //v->elements = (void*)checked_realloc (v->elements, v->ELEMENT_SIZE * v->N_MAX_ELEMENTS);
 }
