@@ -764,7 +764,9 @@ void handle_dep(file_dep_t dependency, command_dep_t command, vector_t master_de
     }
     //adding it to master then
     if (!found){
+        master_curr = checked_malloc(sizeof(struct master_file_dep));
         master_file_dep_change_curr(master_curr, command->index, dependency->depend_type); 
+        vector_append(master_deps, &master_curr);
     }
 }
 }
@@ -830,78 +832,80 @@ void command_dep_vector_delete(vector_t command_dep){
 }
 
 int parallel_execute_command_stream(command_stream_t c){
-  //create a vector of command_dep_t out of command_stream_t
-  command_dep_t command_d = NULL; 
-  
-  // command dependencies
-  vector_t command_dependencies = checked_malloc (sizeof (struct vector));
-  vector_new (command_dependencies, sizeof (command_dep_t));
-  command_dep_vector_new (command_dependencies, c);
+    //create a vector of command_dep_t out of command_stream_t
+    command_dep_t command_d = NULL; 
+
+    // command dependencies
+    vector_t command_dependencies = checked_malloc (sizeof (struct vector));
+    vector_new (command_dependencies, sizeof (command_dep_t));
+    command_dep_vector_new (command_dependencies, c);
 
 
-  // temp variable used in the loop; didn't want to create and destroy multiple times
-  int dependence = -1;
-  int status = 0;
-  // contains all pids of child processes
-  pid_t pid[command_dependencies->n_elements];
+    // temp variable used in the loop; didn't want to create and destroy multiple times
+    int dependence = -1;
+    int status = 0;
+    // contains all pids of child processes
+    pid_t pid[command_dependencies->n_elements];
 
-  // loop through all the commands
-  pid_t child;
-  if ((child = fork()) == -1)
-      error (1, 0, "fork error");
-  else if (child == 0){
-      for (unsigned int i = 0; i < command_dependencies->n_elements; i++)
-      {
-          // parent forks each child
-          if ((pid[i] = fork ()) == -1)
-              error (1, 0, "fork error");
-          else if (pid[i] == 0) // child process
-          {
-              // get the command_dep at command_dependencies[i]
-              vector_get (command_dependencies, i, &command_d);
+    // loop through all the commands
+    pid_t child;
+    if ((child = fork()) == -1)
+        error (1, 0, "fork error");
+    else if (child == 0){
+        for (unsigned int i = 0; i < command_dependencies->n_elements; i++)
+        {
+            // parent forks each child
+            if ((pid[i] = fork ()) == -1)
+                error (1, 0, "fork error");
+            else if (pid[i] == 0) // child process
+            {
+                // get the command_dep at command_dependencies[i]
+                vector_get (command_dependencies, i, &command_d);
 
-              // wait on all unfinished dependencies
-              // processes can depend on only command trees before them
-              // therefore, no check to see if the process has already been forked
-              // (all prior processes should already exist)
-              for (unsigned int j = 0; j < command_d->dependencies->n_elements; j++)
-              {
-                  vector_get (command_d->dependencies, j, &dependence);
+                // wait on all unfinished dependencies
+                // processes can depend on only command trees before them
+                // therefore, no check to see if the process has already been forked
+                // (all prior processes should already exist)
 
-                  waitpid (pid[dependence], &status, WNOWAIT);
-                  if (WEXITSTATUS (status) == WEXITSTATUS (-1))
-                      exit (WEXITSTATUS (status));
-              }
+                
+                for (unsigned int j = 0; j < command_d->dependencies->n_elements; j++)
+                {
+                    vector_get (command_d->dependencies, j, &dependence);
 
-              // if it gets here, then all its dependencies must have been completed
-              exit (rec_execute_command (command_d->command));
-          }
-      } // for loop
-      exit(0);
-  }
-  waitpid(child,&status, 0);
+                    waitpid (pid[dependence], &status, WNOWAIT);
+                    if (WEXITSTATUS (status) == WEXITSTATUS (-1))
+                        exit (WEXITSTATUS (status));
+                }
 
-    if (WEXITSTATUS (status) == WEXITSTATUS (-1))
+                // if it gets here, then all its dependencies must have been completed
+                exit (rec_execute_command (command_d->command));
+            }
+        } // for loop
+        exit(0);
+    }
+    else {//parent
+
+    }
+    waitpid(child,&status, 0);
+
+    if (WEXITSTATUS (status) == WEXITSTATUS (-1)){
         exit (WEXITSTATUS (status));
-
-
-  // kill all zombie processes now that they've all completed
-  for (unsigned int i = 0; i < command_dependencies->n_elements; i++)
-  {
-      waitpid (pid[i], &status, 0);
-      if (WEXITSTATUS (status) == WEXITSTATUS (-1))
-        return -1;
     }
 
-  command_dep_vector_delete (command_dependencies);
-  free (command_dependencies);    
-  return 0;
+
+    // kill all zombie processes now that they've all completed
+    /*
+       for (unsigned int i = 0; i < command_dependencies->n_elements; i++)
+       {
+       waitpid (pid[i], &status, 0);
+       if (WEXITSTATUS (status) == WEXITSTATUS (-1))
+       return -1;
+       }
+       */
+    command_dep_vector_delete (command_dependencies);
+    free (command_dependencies);    
+    return 0;
 }
-
-
- 
-
-
 
 void
 execute_command_stream (command_stream_t c, int time_travel)
