@@ -14,6 +14,8 @@ void vector_new(vector_t s, size_t es);
 void vector_delete(vector_t s);
 void vector_set(vector_t s, size_t index, void* source);
 void vector_append(vector_t s, void* source);
+bool_t vector_append_vector(vector_t source, vector_t dest);
+
 void vector_get_elements(vector_t v, void* start);
 void vector_clear(vector_t v);
 

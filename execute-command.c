@@ -169,7 +169,7 @@ rec_execute_command (command_t c)
         return -1;
     }
 }
-
+/*
 ////////TODO: ORGANIZE LATER/////////
 
 #define FILE_READ 0
@@ -310,16 +310,17 @@ int find_command_level(command_t command, vector_t master_vector){
     return return_level;
 }
 
+*/
 
-void
-levels_vector_new (command_stream_t commands, vector_t levels)
-{
+//void
+//levels_vector_new (command_stream_t commands, vector_t levels)
+//{
   // levels is a vector containing vectors of commands
   /*
    *generate a vector(levels) of vectors of command_t to execute concurrently in a level)
    */
   // will use a temporary vectors of dependencies
-
+/*
   vector_new(levels, sizeof(vector_t));
 
   int level = -1;
@@ -423,6 +424,7 @@ int p_execute_command_stream(command_stream_t c){
     free (levels);
     return 0; 
 }
+)*/
 /*
 //////////////////////////////////////////////
 //              REDOING                 //////
@@ -599,6 +601,215 @@ void command_dep_vector_new(vector_t command_deps, command_stream_t){
 
 }
 */
+//////REDOING AGAIN//////
+//
+
+#define INVALID_DEP -1
+#define READ_DEP 0
+#define WRITE_DEP 1
+////////////////////////////////////////////////////
+//basic structure to represent a file dependency
+////////////////////////////////////////////////////
+struct file_dep{
+    char* file;
+    int depend_type;
+}
+
+typedef struct file_dep* file_dep_t;
+
+void file_dep_new(file_dep_t fp, char* f, int type){
+    fp->file = checked_malloc(sizeof(char)* (strlen(string) + 1));
+    strcpy(fp->file, string);
+    
+    fp->depend_type = type;
+}
+
+void file_dep_delete(file_dep_t fp){
+    free(fp->file);
+}
+
+//finds all file_dep of a command_t tree
+void find_command_dependencies(vector_t dependencies, command_t c_tree){
+    switch (c_tree->type){
+        case(SIMPLE_COMMAND):
+            //add io files
+            if (c_tree->input != NULL){
+                file_dep_t v = checked_malloc(sizeof(struct f_dep));
+                file_dep_new(v, c_tree->input, READ_DEP);
+                vector_append(dependencies, &v);
+            }
+
+            if (c_tree->output != NULL){
+                file_dep_t v = checked_malloc(sizeof(struct f_dep));
+                file_dep_new(v, c_tree->output, WRITE_DEP);
+                vector_append(dependencies, &v);
+            }
+            
+            //1 because its an argument
+            for (int i = 1; c_tree->u.word[i] != NULL; i++){
+                if (c_tree->u.word[i][0] != '-'){
+                    file_dep_t v = checked_malloc(sizeof(struct f_dep));
+                    file_dep_new(v, c_tree->u.word[i], READ_DEP);
+                    vector_append(dependencies, &v);
+                }
+            }
+            break;
+        case (SEQUENCE_COMMAND):
+        case (OR_COMMAND):
+        case (AND_COMMAND):
+        case (PIPE_COMMAND):
+            find_command_dependencies(dependencies, c_tree->u.command[0]);
+            find_command_dependencies(dependencies, c_tree->u.command[1]);
+            break;
+        case (SUBSHELL_COMMAND):
+            find_command_dependencies(dependencies, c_tree->u.subshell_command);
+            break;
+    }
+}
+
+
+
+
+
+
+/*
+command dep structure is a structure that represents a command_t to be
+executed, index represents its rank in index(0 is first read, n is last read)
+dependencies is a vector of ranks of command_t that it depends on
+*/
+struct command_dep{
+    command_t command;
+    int index;
+    vector_t dependencies;
+}
+typedef struct command_dep_t* command_dep;
+
+void command_dep_new(command_dep_t com_dep, command_t c, int ind){
+    com_dep->command = c;
+    com_dep->index = ind;
+    com_dep->dependencies = checked_malloc(sizeof(struct vector));
+    vector_new(com_dep->dependencies, sizeof(int));
+}
+
+void command_dep_delete(command_dep_t com_dep){
+    vector_delete(com_dep->dependencies);
+    free(com_dep->dependencies);
+}
+
+inline void command_dep_add_dependency(command_dep_t command, vector_t depend){
+     
+    vector_append_vector(command->dependencies, depend);
+}
+
+/* master_file_dep struct stores all files used by all command_t so far
+ * it also contains the current command that uses it and the type as well
+ */
+struct master_file_dep{
+    char* file;
+    vector_t prev_command_dep;
+    vector_t curr_command_dep;
+    int curr_depend_type;
+};
+typedef struct master_file_dep* master_file_dep_t;
+
+void master_file_dep_new(master_file_dep_t fp, char* f){
+    fp->file = checked_malloc(sizeof(char)* (strlen(string) + 1));
+    strcpy(fp->file, string);
+    
+    fp->prev_command_dep = checked_malloc(sizeof(struct vector));
+    fp->curr_command_dep = checked_malloc(sizeof(struct vector));
+    vector_new(fp->prev_command_dep, sizeof(int));
+    vector_new(fp->curr_command_dep, sizeof(int));
+    fp->curr_depend_type = INVALID_DEP;
+}
+
+void master_file_dep_delete(master_file_dep_t fp){
+    vector_delete(fp->prev_command_dep);
+    vector_delete(fp->curr_command_dep);
+    free(fp->prev_command_dep);
+    free(fp->prev_command_dep);
+    free(fp->file);
+}
+
+void master_file_dep_change_curr(master_file_dep_t m, int new_dep, int new_dep_type){
+    vector_t temp = m->prev_command_dep;
+    vector_clear(temp);
+    m->prev_command_dep = m->curr_command_dep;
+    m->curr_command_dep = temp;
+    vector_append(m->curr_command, &new_dep);
+    m->curr_depend_type = new_dep_type;
+}
+
+
+void handle_dep(f_dep_t dependency, command_dep_t command, vector_t master_deps ){
+    int found = 0;
+    master_file_dep_t master_curr = NULL;
+    for (unsigned int j = 0; j < master_deps->n_elements; j++){
+        vector_get(master_deps, &master_curr); 
+            //found a match
+            if (!strcmp(dependency->file, master_curr->file)){
+                //after write or WRITE
+                if (master_curr->curr_depend_type == WRITE_DEP || dependency->depend_type == WRITE_DEP){
+                    //adding new dependency                
+                    command_dep_add_dependency(command, master_curr->curr_depend_type);
+                    //changing master
+                    master_file_dep_change_curr(master_curr, command->index, dependency->depend_type);
+                }
+                //only thing left is concurrent read
+                else if { 
+                    command_dep_add_dependency(command, master_curr->prev_depend_type);
+                    vector_append(master_curr-> curr_depend_type, &(command->index));
+                }
+                found = 1;
+    }
+    //adding it to master then
+    if (!found){
+        master_file_dep_change_curr(master_curr, command->index, dependency->depend_type); 
+    }
+}
+    
+    
+
+void command_dep_vector_new(vector_t command_dep_vect, command_stream_t commands){
+    //master fpd is a vector of all files read so far
+    vector_t master_deps = checked_malloc(sizeof(struct vector));    
+    vector_new(master_deps, sizeof(master_file_dep_t));
+    
+
+    //temporary command_dep needed for the loop(only want to create once)
+    command_t curr_command = NULL;
+    vector_t curr_command_deps = checked_malloc(sizeof(file_dep_t));   
+    vector_new(curr_command_deps);
+
+    int curr_command_count = 0;
+    file_dep_t curr_f_dep = NULL;
+    command_dep_t curr_command_dep = NULL;
+
+    while ((curr_command = read_command_stream (commands))){
+        //creating a new command_dep for this command
+        curr_command_dep = checked_malloc(sizeof(struct command_dep));
+        command_dep_new(curr_command_dep, curr_command, curr_command_count);
+
+
+        //find all dependencies of this current command_t
+        find_command_dependencies(curr_command_deps, curr_command);
+        //for all dependencies
+        for (int i = 0; i < curr_command_deps->n_elements, curr_command){
+            vector_get(curr_command_deps, &curr_f_dep);
+             //call a function to check in master dependency vector
+            handle_dep(curr_f_dep, curr_command_dep, master_deps);          
+        }
+        //adding it
+        vector_append(command_dep_vect, &curr_command_dep);
+
+        curr_command_count ++;
+        vector_clear(curr_command_deps);//clearing vector
+    }
+
+
+    vector_delete(master_deps);
+    free(master_deps)
+}
 
 int parallel_execute_command_stream(command_stream_t c){
   //create a vector of command_dep_t out of command_stream_t
