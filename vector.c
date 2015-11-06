@@ -58,8 +58,9 @@ vector_remove (vector_t s, size_t index)
 {
   if (index >= s->n_elements)
     return FALSE;
-  else if (index == s->N_MAX_ELEMENTS - 1)
-    s->N_MAX_ELEMENTS -= 1;
+  else if (index == s->N_MAX_ELEMENTS - 1){
+    s->n_elements -= 1;
+  }
   else
     {
       char* offset = ((char*)s->elements + index*s->ELEMENT_SIZE); //converting to byte size
@@ -89,7 +90,9 @@ bool_t vector_append_vector(vector_t dest, vector_t source){
 
 }
 
-
+bool_t vector_empty(vector_t v){
+return !!(v->n_elements);
+}
 void
 vector_test()
 {
