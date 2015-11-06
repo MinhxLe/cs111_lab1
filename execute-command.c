@@ -447,11 +447,10 @@ int parallel_execute_command_stream(command_stream_t c){
                 // processes can depend on only command trees before them
                 // therefore, no check to see if the process has already been forked
                 // (all prior processes should already exist)
-                //printf("waiting for %d processes\n", (int)command_d->dependencies->n_elements);
+                printf("waiting for %d processes\n", (int)command_d->dependencies->n_elements);
                 for (unsigned int j = 0; j < command_d->dependencies->n_elements; j++)
                 {
                     vector_get (command_d->dependencies, j, &dependence);
-
                     waitpid (pid[dependence], &status, WNOWAIT);
                     if (WEXITSTATUS (status) == WEXITSTATUS (-1))
                         exit (WEXITSTATUS (status));
@@ -461,11 +460,20 @@ int parallel_execute_command_stream(command_stream_t c){
                 exit (rec_execute_command (command_d->command));
             }
         } // for loop
-        exit(0);
-    }
-    else {//parent
+
+    
+        for (unsigned int j = 0; j < command_dependencies->n_elements; j++)
+        {
+            waitpid (pid[j], &status, WNOWAIT);
+            if (WEXITSTATUS (status) == WEXITSTATUS (-1))
+                exit (WEXITSTATUS (status));
+        }
+        printf("FINISHED WAITING");
+        exit(0); 
+
 
     }
+    //parent
     waitpid(child,&status, 0);
 
     if (WEXITSTATUS (status) == WEXITSTATUS (-1)){
