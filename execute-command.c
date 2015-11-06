@@ -696,7 +696,7 @@ void command_dep_delete(command_dep_t com_dep){
     free(com_dep->dependencies);
 }
 
-inline void command_dep_add_dependency(command_dep_t command, vector_t depend){
+void command_dep_add_dependency(command_dep_t command, vector_t depend){
      
     vector_append_vector(command->dependencies, depend);
 }

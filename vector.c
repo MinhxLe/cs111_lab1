@@ -75,16 +75,15 @@ vector_get_elements (vector_t v, void* start)
   start = v->elements;
 }
 
-void vector_append_vector(vector_t source, vector_t dest){
+bool_t vector_append_vector(vector_t source, vector_t dest){
     if (source == NULL || dest == NULL)
         return FALSE;
     if (source->ELEMENT_SIZE != dest->ELEMENT_SIZE)
         return FALSE;
     
     checked_realloc(dest->elements, dest->ELEMENT_SIZE*(dest->n_elements+ source->n_elements));
-    memcpy( )
     char* start = ((char*)dest->elements + dest->ELEMENT_SIZE * dest->n_elements);
-    memcpy ((void*)start, source->elements, (source->n_elements)*dest->ELEMENT_SIZE);  
+    memcpy ((void*)start, (void*)source->elements, (source->n_elements)*dest->ELEMENT_SIZE);  
     dest->n_elements += source->n_elements;
     return TRUE;
 
@@ -115,5 +114,5 @@ void vector_clear(vector_t v){
     v->n_elements = 0;
 
     v->N_MAX_ELEMENTS = 8;
-    v->elements = (void*)checked_realloc (es * s->N_MAX_ELEMENTS);
+    v->elements = (void*)checked_realloc (v->elements, v->ELEMENT_SIZE * v->N_MAX_ELEMENTS);
 }
