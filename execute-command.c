@@ -891,6 +891,6 @@ execute_command_stream (command_stream_t c, int time_travel)
     } 
   else{
     //TODO ERROR
-      p_execute_command_stream(c);
+      parallel_execute_command_stream(c);
   }
 }
