@@ -16,55 +16,91 @@
 #include "vector.h"
 #include "declarations.h"
 
-    void 
+void 
 handle_io (command_t c)
 {
-    int read_fd = -1, write_fd = -1;
-    // creating a pipe
+  int read_fd = -1, write_fd = -1;
+  // creating a pipe
 
-    if (c->input != NULL)
-    {
-        if ((read_fd = open (c->input, O_RDONLY)) == -1)
-            error (1, 0, "ERROR 6");
-        dup2 (read_fd, 0);
-    }
+  if (c->input != NULL)
+  {
+    if ((read_fd = open (c->input, O_RDONLY)) == -1)
+      error (1, 0, "ERROR 6");
+    dup2 (read_fd, 0);
+  }
 
-    if (c->output != NULL)
-    {
-        if ((write_fd = open (c->output, O_WRONLY | O_TRUNC | O_CREAT,
-                        S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR)) == -1)
-            error (1, 0, "ERROR 7");
+  if (c->output != NULL)
+  {
+    if ((write_fd = open (c->output, O_WRONLY | O_TRUNC | O_CREAT,
+                          S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR)) == -1)
+      error (1, 0, "ERROR 7");
 
-        dup2 (write_fd, 1);// set write_fd to pipe
-    }   
-    // don't need to close file because execvp will close file for you
+    dup2 (write_fd, 1);// set write_fd to pipe
+  }   
+  // don't need to close file because execvp will close file for you
 }
 
 
-    int
+int
 command_status (command_t c)
 {
-    return c->status;
+  return c->status;
 }
 
-    int 
+int 
 rec_execute_command (command_t c)
 {
-    switch (c->type)
-      {
-        case (SIMPLE_COMMAND):
+  switch (c->type)
+    {
+      case (SIMPLE_COMMAND):
+        {
+            pid_t pid;
+            int status;
+            //forking
+            if ((pid = fork ()) == -1)
+                error (1, 0, "ERROR 1");
+            else if (pid == 0)
+            {//child
+                if (strcmp (c->u.word[0], "false") == 0)
+                    exit (-1);
+                handle_io (c);
+                execvp (c->u.word[0], c->u.word);    
+            }
+            else 
+            {//parent
+                //waiting for child write process to finish writing
+                waitpid (pid, &status, 0);
+                //error
+                if (WEXITSTATUS (status) == WEXITSTATUS (-1))
+                    return WEXITSTATUS (status);
+            }
+            return 0;
+        }
+      case (SEQUENCE_COMMAND):
+          rec_execute_command (c->u.command[0]);
+          return rec_execute_command (c->u.command[1]);
+      case (OR_COMMAND):
+          if (rec_execute_command (c->u.command[0]) == WEXITSTATUS (-1))
+          return rec_execute_command (c->u.command[1]);
+          else
+              return 0;
+      case (AND_COMMAND):
+          if (rec_execute_command (c->u.command[0]) == WEXITSTATUS (0))
+          return rec_execute_command (c->u.command[1]);
+          else
+              return -1;
+      case (SUBSHELL_COMMAND):
           {
               pid_t pid;
               int status;
               //forking
               if ((pid = fork ()) == -1)
-                  error (1, 0, "ERROR 1");
+                  error (1, 0, "ERROR 2");
               else if (pid == 0)
               {//child
-                  if (strcmp (c->u.word[0], "false") == 0)
-                      exit (-1);
                   handle_io (c);
-                  execvp (c->u.word[0], c->u.word);    
+                  rec_execute_command (c->u.subshell_command);
+                  exit (0);
               }
               else 
               {//parent
@@ -76,97 +112,61 @@ rec_execute_command (command_t c)
               }
               return 0;
           }
-        case (SEQUENCE_COMMAND):
-            rec_execute_command (c->u.command[0]);
-            return rec_execute_command (c->u.command[1]);
-        case (OR_COMMAND):
-            if (rec_execute_command (c->u.command[0]) == WEXITSTATUS (-1))
-            return rec_execute_command (c->u.command[1]);
-            else
-                return 0;
-        case (AND_COMMAND):
-            if (rec_execute_command (c->u.command[0]) == WEXITSTATUS (0))
-            return rec_execute_command (c->u.command[1]);
-            else
-                return -1;
-        case (SUBSHELL_COMMAND):
-            {
-                pid_t pid;
-                int status;
-                //forking
-                if ((pid = fork ()) == -1)
-                    error (1, 0, "ERROR 2");
-                else if (pid == 0)
-                {//child
-                    handle_io (c);
-                    rec_execute_command (c->u.subshell_command);
-                    exit (0);
-                }
-                else 
-                {//parent
-                    //waiting for child write process to finish writing
-                    waitpid (pid, &status, 0);
-                    //error
-                    if (WEXITSTATUS (status) == WEXITSTATUS (-1))
-                        return WEXITSTATUS (status);
-                }
-                return 0;
-            }
-        case (PIPE_COMMAND):
-            {
-                int pipefd[2];
-                if (pipe (pipefd) == -1)
-                    error (1, 0, "ERROR 3");
+      case (PIPE_COMMAND):
+          {
+              int pipefd[2];
+              if (pipe (pipefd) == -1)
+                  error (1, 0, "ERROR 3");
 
-                pid_t write_pid, read_pid;
-                //first we run the write pid code
-                if ((write_pid = fork ()) == -1)
-                    error(1,0,"ERROR 4");
-                else if (write_pid == 0)
-                {//child write pid
-                    close (pipefd[0]); //close read pipe 
-                    dup2 (pipefd[1], 1);
-                    close (pipefd[1]);//since we already set stdout to be this write fd 
-                    rec_execute_command (c->u.command[0]);
-                    exit (0);
-                }
-                else
-                {//parent process
-                    int status;
-                    //waiting for child write process to finish writing
-                    waitpid (write_pid, &status, 0);
-                    //error
-                    if (WEXITSTATUS (status) == WEXITSTATUS (-1))
-                        return WEXITSTATUS (status);
+              pid_t write_pid, read_pid;
+              //first we run the write pid code
+              if ((write_pid = fork ()) == -1)
+                  error(1,0,"ERROR 4");
+              else if (write_pid == 0)
+              {//child write pid
+                  close (pipefd[0]); //close read pipe 
+                  dup2 (pipefd[1], 1);
+                  close (pipefd[1]);//since we already set stdout to be this write fd 
+                  rec_execute_command (c->u.command[0]);
+                  exit (0);
+              }
+              else
+              {//parent process
+                  int status;
+                  //waiting for child write process to finish writing
+                  waitpid (write_pid, &status, 0);
+                  //error
+                  if (WEXITSTATUS (status) == WEXITSTATUS (-1))
+                      return WEXITSTATUS (status);
 
-                    //handling read process now
-                    if ((read_pid = fork ()) == -1)
-                        error(1,0,"ERROR 5");
-                    else if (read_pid == 0)
-                    {
-                        close (pipefd[1]);//close write fd
-                        dup2 (pipefd[0], 0);//set output pipe as stdin
-                        close (pipefd[0]);
-                        rec_execute_command (c->u.command[1]);
-                        exit (0);
-                    }
+                  //handling read process now
+                  if ((read_pid = fork ()) == -1)
+                      error(1,0,"ERROR 5");
+                  else if (read_pid == 0)
+                  {
+                      close (pipefd[1]);//close write fd
+                      dup2 (pipefd[0], 0);//set output pipe as stdin
+                      close (pipefd[0]);
+                      rec_execute_command (c->u.command[1]);
+                      exit (0);
+                  }
 
-                    else
-                    {//parent again
-                        close (pipefd[0]);
-                        close (pipefd[1]);
-                        waitpid (read_pid, &status, 0);
+                  else
+                  {//parent again
+                      close (pipefd[0]);
+                      close (pipefd[1]);
+                      waitpid (read_pid, &status, 0);
 
-                        //error
-                        if (WEXITSTATUS (status) == WEXITSTATUS (-1))
-                            return WEXITSTATUS(status);
+                      //error
+                      if (WEXITSTATUS (status) == WEXITSTATUS (-1))
+                          return WEXITSTATUS(status);
 
-                        return 0;
-                    }
-                }
-            }
-        default:
-            return -1;
+                      return 0;
+                  }
+              }
+          }
+      default:
+        return -1;
     }
 }
 #define INVALID_DEP -1
@@ -262,14 +262,13 @@ void
 command_dep_new (command_dep_t com_dep, command_t c)
 {
   com_dep->command = c;
-  com_dep->dependencies = checked_malloc(sizeof(struct vector));
-  vector_new (com_dep->dependencies, sizeof(command_dep_t));
+  com_dep->dependencies = checked_malloc (sizeof (struct vector));
+  vector_new (com_dep->dependencies, sizeof (command_dep_t));
 
-  com_dep->dependors = checked_malloc(sizeof(struct vector));
-  vector_new (com_dep->dependors, sizeof(command_dep_t));
+  com_dep->dependors = checked_malloc (sizeof (struct vector));
+  vector_new (com_dep->dependors, sizeof (command_dep_t));
 }
 
-//TODO MEMORY LEAK needs to be recursive
 void
 command_dep_delete (command_dep_t com_dep)
 {
@@ -292,12 +291,11 @@ command_dep_add_dependor (command_dep_t command, command_dep_t depr)
   vector_append (command->dependors, &depr);
 }
 
-
 void 
 command_dep_remove_dependency (command_dep_t command, command_dep_t remove)
 {
   command_dep_t temp = NULL;
-  for (unsigned int x = 0; x <  command->dependencies->n_elements;x++)
+  for (unsigned int x = 0; x < command->dependencies->n_elements; x++)
     {
       vector_get (command->dependencies, x, &temp);
       //TODO LOL
@@ -320,18 +318,19 @@ master_file_dep
   vector_t curr_command_dep;
   int curr_depend_type;
 };
+
 typedef struct master_file_dep* master_file_dep_t;
 
 void
 master_file_dep_new (master_file_dep_t fp, char* f)
 {
-  fp->file = checked_malloc (sizeof(char)* (strlen(f) + 1));
+  fp->file = checked_malloc (sizeof (char)* (strlen( f) + 1));
   strcpy (fp->file, f);
 
-  fp->prev_command_dep = checked_malloc (sizeof(struct vector));
-  fp->curr_command_dep = checked_malloc (sizeof(struct vector));
-  vector_new (fp->prev_command_dep, sizeof(command_dep_t));
-  vector_new (fp->curr_command_dep, sizeof(command_dep_t));
+  fp->prev_command_dep = checked_malloc (sizeof (struct vector));
+  fp->curr_command_dep = checked_malloc (sizeof (struct vector));
+  vector_new (fp->prev_command_dep, sizeof (command_dep_t));
+  vector_new (fp->curr_command_dep, sizeof (command_dep_t));
   fp->curr_depend_type = INVALID_DEP;
 }
 
@@ -512,11 +511,11 @@ parallel_execute_command_stream (command_stream_t c)
   command_dep_t temp;
 
   for (unsigned int x = 0; x < seed->n_elements; x++){
-      vector_get(seed, x, &temp);
+      vector_get (seed, x, &temp);
       if ((pid[x] = fork ()) == -1)
           return -1;
       else if  (pid[x] == 0){
-          rec_execute_command_dep(temp); 
+          rec_execute_command_dep (temp); 
           exit(0);
       }
   }
