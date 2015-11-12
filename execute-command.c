@@ -451,25 +451,25 @@ int parallel_execute_command_stream(command_stream_t c){
                 // therefore, no check to see if the process has already been forked
                 // (all prior processes should already exist)
                 int r;
-                printf ("command: %s, num dependencies: %d, pid: %d \n", command_d->command->u.word[0],
-                                        (int) command_d->dependencies->n_elements, pid[i]);
+                // printf ("command: %s, num dependencies: %d, pid: %d \n", command_d->command->u.word[0],
+                //                         (int) command_d->dependencies->n_elements, pid[i]);
                 for (unsigned int j = 0; j < command_d->dependencies->n_elements; j++)
                 {
                     vector_get (command_d->dependencies, j, &dependence);
                     r = waitid (P_PID, pid[dependence], &info, WNOWAIT | WEXITED);
                     while (r != 0) 
                     {
-                      printf("dependence index: %d, pid: %d \n", dependence, pid[dependence]);
+                      // printf("dependence index: %d, pid: %d \n", dependence, pid[dependence]);
                       if (r == -1)
                       {
-                        printf("error: %d \n", errno);
-                        printf("ECHILD: %d, EINTR: %d, EINVAL: %d", ECHILD, EINTR, EINVAL);
+                        // printf("error: %d \n", errno);
+                        // printf("ECHILD: %d, EINTR: %d, EINVAL: %d", ECHILD, EINTR, EINVAL);
                         break;
                       }
                       r = waitid (P_PID, pid[dependence], &info, WNOWAIT | WEXITED);
                     }
 
-                    printf("finished \n");
+                    // printf("finished \n");
                     if (WEXITSTATUS (info.si_status) == WEXITSTATUS (-1))
                         exit (WEXITSTATUS (info.si_status));
                 }
@@ -482,9 +482,9 @@ int parallel_execute_command_stream(command_stream_t c){
         for (unsigned int j = 0; j < command_dependencies->n_elements; j++)
         {
             waitid (P_PID, pid[j], &info, WNOWAIT | WEXITED);
-            if (info.si_code == CLD_EXITED)
-              printf("hi \n");
-            printf("%d \n", info.si_status);
+            // if (info.si_code == CLD_EXITED)
+            //   printf("hi \n");
+            // printf("%d \n", info.si_status);
             if (WEXITSTATUS (info.si_status) == WEXITSTATUS (-1))
               exit (WEXITSTATUS (info.si_status));
         }
