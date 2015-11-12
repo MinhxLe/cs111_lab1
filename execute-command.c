@@ -1,5 +1,5 @@
 // UCLA CS 111 Lab 1 command execution
-#define _DEFAULT_SOURCE
+#define _SVID_SOURCE
 
 #include "command.h"
 #include "command-internals.h"
