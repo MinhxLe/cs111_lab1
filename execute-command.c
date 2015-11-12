@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <errno.h>
 #include <error.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -458,13 +459,14 @@ int parallel_execute_command_stream(command_stream_t c){
                     {
                       if (r == -1)
                       {
-                        printf("error");
+                        printf("error: %d \n", errno);
+                        printf("ECHILD: %d, EINTR: %d, EINVAL: %d", ECHILD, EINTR, EINVAL);
                         exit(-1);
                       }
                       r = waitid (P_PID,pid[dependence], &info,WNOWAIT |  WEXITED);
                     }
 
-                    printf("finished");
+                    printf("finished \n");
                     if (WEXITSTATUS (info.si_status) == WEXITSTATUS (-1))
                         exit (WEXITSTATUS (info.si_status));
                 }
@@ -479,8 +481,8 @@ int parallel_execute_command_stream(command_stream_t c){
         {
             waitid (P_PID, pid[j], &info, WNOWAIT | WEXITED);
             if (info.si_code == CLD_EXITED)
-              printf("hi");
-            printf("%d", info.si_status);
+              printf("hi \n");
+            printf("%d \n", info.si_status);
             if (WEXITSTATUS (info.si_status) == WEXITSTATUS (-1))
               exit (WEXITSTATUS (info.si_status));
         }
