@@ -431,6 +431,7 @@ int parallel_execute_command_stream(command_stream_t c){
 
     // loop through all the commands
     pid_t child;
+    int r;
     if ((child = fork()) == -1)
         error (1, 0, "fork error");
     else if (child == 0){
@@ -450,7 +451,6 @@ int parallel_execute_command_stream(command_stream_t c){
                 // processes can depend on only command trees before them
                 // therefore, no check to see if the process has already been forked
                 // (all prior processes should already exist)
-                int r;
                 printf ("command: %s, num dependencies: %d, pid: %d \n", command_d->command->u.word[0],
                                         (int) command_d->dependencies->n_elements, pid[i]);
                 for (unsigned int j = 0; j < command_d->dependencies->n_elements; j++)
@@ -461,11 +461,7 @@ int parallel_execute_command_stream(command_stream_t c){
                     {
                       printf("dependence index: %d, pid: %d \n", dependence, pid[dependence]);
                       if (r == -1)
-                      {
-                        printf("error: %d \n", errno);
-                        printf("ECHILD: %d, EINTR: %d, EINVAL: %d", ECHILD, EINTR, EINVAL);
-                        exit(-1);
-                      }
+                        break;
                       r = waitid (P_PID, pid[dependence], &info, WNOWAIT | WEXITED);
                     }
 
@@ -481,12 +477,14 @@ int parallel_execute_command_stream(command_stream_t c){
 
         for (unsigned int j = 0; j < command_dependencies->n_elements; j++)
         {
-            waitid (P_PID, pid[j], &info, WNOWAIT | WEXITED);
-            if (info.si_code == CLD_EXITED)
-              printf("hi \n");
-            printf("%d \n", info.si_status);
-            if (WEXITSTATUS (info.si_status) == WEXITSTATUS (-1))
-              exit (WEXITSTATUS (info.si_status));
+          r = waitid (P_PID, pid[dependence], &info, WNOWAIT | WEXITED);
+          while (r != 0) 
+            {
+              printf("dependence index: %d, pid: %d \n", dependence, pid[dependence]);
+              if (r == -1)
+                break;
+              r = waitid (P_PID, pid[dependence], &info, WNOWAIT | WEXITED);
+            }
         }
         exit(0); 
 
