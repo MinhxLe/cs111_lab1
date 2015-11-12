@@ -454,7 +454,7 @@ int parallel_execute_command_stream(command_stream_t c){
                 for (unsigned int j = 0; j < command_d->dependencies->n_elements; j++)
                 {
                     vector_get (command_d->dependencies, j, &dependence);
-                    r = waitid (P_PID,pid[dependence], &info,WNOWAIT |  WEXITED);
+                    r = waitid (P_PID, pid[dependence], &info, WNOWAIT | WEXITED);
                     while (r != 0) 
                     {
                       if (r == -1)
@@ -463,7 +463,7 @@ int parallel_execute_command_stream(command_stream_t c){
                         printf("ECHILD: %d, EINTR: %d, EINVAL: %d", ECHILD, EINTR, EINVAL);
                         exit(-1);
                       }
-                      r = waitid (P_PID,pid[dependence], &info,WNOWAIT |  WEXITED);
+                      r = waitid (P_PID, pid[dependence], &info, WNOWAIT | WEXITED);
                     }
 
                     printf("finished \n");
