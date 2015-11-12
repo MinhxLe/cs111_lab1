@@ -451,12 +451,15 @@ int parallel_execute_command_stream(command_stream_t c){
                 // therefore, no check to see if the process has already been forked
                 // (all prior processes should already exist)
                 int r;
+                printf ("command: %s, num dependencies: %d, pid: %d \n", command_d->command->u.word[0],
+                                        (int) command_d->dependencies->n_elements, pid[i]);
                 for (unsigned int j = 0; j < command_d->dependencies->n_elements; j++)
                 {
                     vector_get (command_d->dependencies, j, &dependence);
                     r = waitid (P_PID, pid[dependence], &info, WNOWAIT | WEXITED);
                     while (r != 0) 
                     {
+                      printf("dependence index: %d, pid: %d \n", dependence, pid[dependence]);
                       if (r == -1)
                       {
                         printf("error: %d \n", errno);
@@ -471,8 +474,7 @@ int parallel_execute_command_stream(command_stream_t c){
                         exit (WEXITSTATUS (info.si_status));
                 }
 
-                rec_execute_command (command_d->command);
-                exit(0);
+                exit (rec_execute_command (command_d->command));
             }
 
         } // for loop
