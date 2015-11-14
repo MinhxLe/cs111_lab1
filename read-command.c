@@ -340,10 +340,14 @@ clean_raw_buffer (string_t raw_string, string_t finished_string)
                 {
                   error (1, 0, "%d: consecutive operators(<)", line_number);
                 }
-              if (!(string_get_char (raw_string, ++i, &curr_char) &&
-                  (curr_char == '>' || curr_char == '&')))
-                    checked_next_char = TRUE;
+           
               string_append_char (finished_string, '<'); 
+              if (!(string_get_char (raw_string, ++i, &curr_char) &&
+                  (curr_char == '>' || curr_char == '&'))){
+                    string_append_char(finished_string, curr_char);
+                  checked_next_char = TRUE;
+              }
+            
               handled_io = FALSE;
             }
           else if (curr_char == '>')
@@ -357,11 +361,14 @@ clean_raw_buffer (string_t raw_string, string_t finished_string)
                 {
                   error (1, 0, "%d: consecutive operators (>)", line_number);
                 }
-              if (!(string_get_char (raw_string, ++i, &curr_char) &&
-                  (curr_char == '>' || curr_char == '&' || curr_char == '|')))
-                    checked_next_char = TRUE;
               
               string_append_char (finished_string, '>'); 
+              if (!(string_get_char (raw_string, ++i, &curr_char) &&
+                  (curr_char == '>' || curr_char == '&' || curr_char == '|'))){
+                    string_append_char(finished_string, curr_char);
+                  checked_next_char = TRUE;
+              }
+              
               handled_io = FALSE;
             }
 
@@ -547,7 +554,27 @@ parse_command_tree (string_t cln_string, command_stream_t tree){
             }
           else if (curr_char == ';')
             opp_handle_operator (com_stack, op_stack, ';');
-          else if (curr_char == '<' || curr_char == '>')
+          else if (curr_char == '<'){
+
+              char temp = curr_char;
+              string_get_char (cln_string, ++i, &curr_char);
+              while (curr_char != '\0') //signifying end of file
+                {
+                  string_append_char (simple_buff, curr_char);
+                  string_get_char (cln_string, ++i, &curr_char);
+                }
+              //creating new string for file name
+              char* file;
+              string_to_new_cstring (simple_buff, &file, 0, simple_buff->length);
+
+              command_t com;
+              stack_pop (com_stack, &com);
+              command_set_io (com, file, temp);
+              stack_push (com_stack, &com);
+              string_clear (simple_buff);//clearing since you used to read file name
+          
+          }
+          else if (curr_char == '>')
             {
               char temp = curr_char;
               string_get_char (cln_string, ++i, &curr_char);
