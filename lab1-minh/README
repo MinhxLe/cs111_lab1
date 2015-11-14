@@ -1,5 +1,5 @@
 AUTHOR: Minh Le (904478767) && Caroline Zhu (204163619)
-DATE: 19:05 PM
+DATE: 11/04/2015
 
 ====================================================================================
 
@@ -32,3 +32,9 @@ LAB 1B:
 
 Concerns and Limitations:
   . We assumed that execvp would close any open files
+
+====================================================================================
+
+LAB 1C:
+
+no concerns/limitations as far as we know

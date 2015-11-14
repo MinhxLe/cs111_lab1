@@ -35,6 +35,12 @@ vector_set (vector_t s, size_t index, void* source)
   s->n_elements = index + 1;
 }
 
+void
+vector_append(vector_t s, void* source){
+    vector_set(s, s->n_elements, source);
+}
+
+
 bool_t
 vector_get (vector_t s, size_t index, void* dest)
 {
@@ -52,8 +58,9 @@ vector_remove (vector_t s, size_t index)
 {
   if (index >= s->n_elements)
     return FALSE;
-  else if (index == s->N_MAX_ELEMENTS - 1)
-    s->N_MAX_ELEMENTS -= 1;
+  else if (index == s->N_MAX_ELEMENTS - 1){
+    s->n_elements -= 1;
+  }
   else
     {
       char* offset = ((char*)s->elements + index*s->ELEMENT_SIZE); //converting to byte size
@@ -69,6 +76,23 @@ vector_get_elements (vector_t v, void* start)
   start = v->elements;
 }
 
+bool_t vector_append_vector(vector_t dest, vector_t source){
+    if (source == NULL || dest == NULL)
+        return FALSE;
+    if (source->ELEMENT_SIZE != dest->ELEMENT_SIZE)
+        return FALSE;
+    
+    dest->elements = (void*)checked_realloc(dest->elements, dest->ELEMENT_SIZE*(dest->n_elements+ source->n_elements));
+    char* start = ((char*)dest->elements + dest->ELEMENT_SIZE * dest->n_elements);
+    memcpy ((void*)start, (void*)source->elements, (source->n_elements)*dest->ELEMENT_SIZE);  
+    dest->n_elements += source->n_elements;
+    return TRUE;
+
+}
+
+bool_t vector_empty(vector_t v){
+return (v->n_elements == 0);
+}
 void
 vector_test()
 {
@@ -85,4 +109,13 @@ vector_test()
     }
   vector_delete(v);
   free(v);
+}
+
+void vector_clear(vector_t v){
+    if (v == NULL)
+        return;
+    v->n_elements = 0;
+    //TODO why can't you shrink it
+    //v->N_MAX_ELEMENTS = 8;
+    //v->elements = (void*)checked_realloc (v->elements, v->ELEMENT_SIZE * v->N_MAX_ELEMENTS);
 }

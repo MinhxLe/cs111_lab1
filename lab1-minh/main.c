@@ -58,21 +58,18 @@ main (int argc, char **argv)
 
   command_t last_command = NULL;
   command_t command = checked_malloc (sizeof (struct command));
-  
-  while ((command = read_command_stream (command_stream)))
-    {
-      if (print_tree)
-      	{
-      	  printf ("# %d\n", command_number++);
-      	  print_command (command);
-      	}
-      else
-      	{
-      	  last_command = command;
-      	  execute_command (command, time_travel);
-      	}
-    }
+ 
 
+  if (print_tree){
+      while ((command = read_command_stream (command_stream)))
+      {
+          printf ("# %d\n", command_number++);
+          print_command (command);
+      }
+  }
+  else
+      execute_command_stream(command_stream, time_travel);
+  
   command_stream_delete (command_stream);
   free (command_stream);
   return print_tree || !last_command ? 0 : command_status (last_command);
