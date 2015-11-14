@@ -342,10 +342,12 @@ clean_raw_buffer (string_t raw_string, string_t finished_string)
                 }
            
               string_append_char (finished_string, '<'); 
-              if (!(string_get_char (raw_string, ++i, &curr_char) &&
-                  (curr_char == '>' || curr_char == '&'))){
+              if (string_get_char (raw_string, ++i, &curr_char)){
+                  if (curr_char == '>' || curr_char == '&')
                     string_append_char(finished_string, curr_char);
-                  checked_next_char = TRUE;
+                  else
+                    checked_next_char = TRUE;
+                  
               }
             
               handled_io = FALSE;
@@ -363,10 +365,11 @@ clean_raw_buffer (string_t raw_string, string_t finished_string)
                 }
               
               string_append_char (finished_string, '>'); 
-              if (!(string_get_char (raw_string, ++i, &curr_char) &&
-                  (curr_char == '>' || curr_char == '&' || curr_char == '|'))){
+              if (string_get_char (raw_string, ++i, &curr_char)){
+                if (curr_char == '>' || curr_char == '&' || curr_char == '|')
                     string_append_char(finished_string, curr_char);
-                  checked_next_char = TRUE;
+                else 
+                    checked_next_char = TRUE;
               }
               
               handled_io = FALSE;
@@ -556,8 +559,13 @@ parse_command_tree (string_t cln_string, command_stream_t tree){
             opp_handle_operator (com_stack, op_stack, ';');
           else if (curr_char == '<'){
 
+                 //(curr_char == '>' || curr_char == '&'))){
+
               char temp = curr_char;
               string_get_char (cln_string, ++i, &curr_char);
+              
+              
+              
               while (curr_char != '\0') //signifying end of file
                 {
                   string_append_char (simple_buff, curr_char);
@@ -578,6 +586,10 @@ parse_command_tree (string_t cln_string, command_stream_t tree){
             {
               char temp = curr_char;
               string_get_char (cln_string, ++i, &curr_char);
+              
+              
+              
+              
               while (curr_char != '\0') //signifying end of file
                 {
                   string_append_char (simple_buff, curr_char);
