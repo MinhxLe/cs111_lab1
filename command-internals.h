@@ -25,7 +25,8 @@ struct command
   // I/O redirections, or 0 if none.
   char *input;
   char *output;
-    char* io_string;
+    char* input_string;
+    char* output_string;
 union
   {
     // for AND_COMMAND, SEQUENCE_COMMAND, OR_COMMAND, PIPE_COMMAND:

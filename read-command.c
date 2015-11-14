@@ -38,7 +38,8 @@ command_new (command_t m_command, enum command_type t, int stat,
     m_command->status = stat;
     m_command->input = in;
     m_command->output = out;
-    m_command->io_string = NULL;
+    m_command->input_string = NULL;
+    m_command->output_string = NULL;
     switch (m_command->type)
     {
         case (AND_COMMAND):
@@ -567,14 +568,12 @@ parse_command_tree (string_t cln_string, command_stream_t tree){
                 string_get_char (cln_string, ++i, &curr_char);
                 if (curr_char == '>' || curr_char == '&'){
                     string_append_char(simple_buff, curr_char);
-
                     string_get_char (cln_string, ++i, &curr_char);
                 }
                 char * io_type;
                 string_to_new_cstring(simple_buff, &io_type, 0, simple_buff->length);
                 string_clear (simple_buff);//clearing since you used to read file name
-
-
+                
                 while (curr_char != '\0') //signifying end of file
                 {
                     string_append_char (simple_buff, curr_char);
@@ -586,155 +585,158 @@ parse_command_tree (string_t cln_string, command_stream_t tree){
 
                 command_t com;
                 stack_pop (com_stack, &com);
-                command_set_io (com, file, temp);
-                com->io_string = io_type;
-                
+                //command_set_io (com, file, temp);
+                com->input_string = io_type;
+                com->input = file;
                 stack_push (com_stack, &com);
                 string_clear (simple_buff);//clearing since you used to read file name
 
             }
-                else if (curr_char == '>')
-                {
-                    char temp = curr_char;
-                    string_append_char (simple_buff, curr_char);
-                    
-                    string_get_char (cln_string, ++i, &curr_char);
-                    if (curr_char == '>' || curr_char == '&' || curr_char == '|'){
-                        string_append_char(simple_buff, curr_char);
-                        string_get_char (cln_string, ++i, &curr_char);
-                    }
-                    char * io_type;
-                    string_to_new_cstring(simple_buff, &io_type, 0, simple_buff->length);
-                    string_clear (simple_buff);//clearing since you used to read file name
-
-                    while (curr_char != '\0') //signifying end of file
-                    {
-                        string_append_char (simple_buff, curr_char);
-                        string_get_char (cln_string, ++i, &curr_char);
-                    }
-                    //creating new string for file name
-                    char* file;
-                    string_to_new_cstring (simple_buff, &file, 0, simple_buff->length);
-                    command_t com;
-                    stack_pop (com_stack, &com);
-                    command_set_io (com, file, temp);
-                    com->io_string = io_type;
-                    stack_push (com_stack, &com);
-                    string_clear (simple_buff);//clearing since you used to read file name
-                }
-                else
-                    printf("SHOULD NEVER OCCUR");
-            }
-        } //else for all non simple characters
-        stack_delete (com_stack);
-        stack_delete (op_stack);
-        string_delete (simple_buff);
-
-        free (com_stack);
-        free (op_stack);
-        free (simple_buff);
-    }
-
-    command_stream_t
-        make_command_stream (int (*get_next_byte) (void *),
-                void *get_next_byte_argument)
-        {
-            //reading every byte
-            string_t raw_string = checked_malloc (sizeof (struct string));
-            string_new (raw_string);
-            char c;
-
-            c = get_next_byte (get_next_byte_argument);
-            while (c != EOF)
+            else if (curr_char == '>')
             {
-                string_append_char (raw_string, c);
-                c = get_next_byte (get_next_byte_argument);
-            }
+                char temp = curr_char;
+                string_append_char (simple_buff, curr_char);
 
-            //cleaning up the string
-            string_t clean_string = checked_malloc (sizeof (struct string));
-            string_new (clean_string);
-            clean_raw_buffer (raw_string, clean_string);
+                string_get_char (cln_string, ++i, &curr_char);
+                if (curr_char == '>' || curr_char == '&' || curr_char == '|'){
+                    string_append_char(simple_buff, curr_char);
+                    string_get_char (cln_string, ++i, &curr_char);
+                }
+                char * io_type;
+                string_to_new_cstring(simple_buff, &io_type, 0, simple_buff->length);
+                string_clear (simple_buff);//clearing since you used to read file name
 
-            //creating a new command sream
-            command_stream_t m_tree = checked_malloc (sizeof (struct command_stream));
-            command_stream_new (m_tree);
-            parse_command_tree (clean_string, m_tree); 
-
-            //freeing everything
-            string_delete (raw_string);
-            string_delete (clean_string);
-            free (raw_string);
-            free (clean_string);
-
-            return m_tree;
-        }
-
-    void
-        test_command_stream (command_stream_t t)
-        {
-            printf("%d\n", t->n_commands);
-        }
-
-    command_t
-        read_command_stream (command_stream_t s)
-        {
-            if (s->curr_com_index < s->n_commands)
-            { 
-                command_t returning_command;
-                vector_get (s->command_trees, s->curr_com_index, &returning_command);
-                s->curr_com_index++;
-                return returning_command;
+                while (curr_char != '\0') //signifying end of file
+                {
+                    string_append_char (simple_buff, curr_char);
+                    string_get_char (cln_string, ++i, &curr_char);
+                }
+                //creating new string for file name
+                char* file;
+                string_to_new_cstring (simple_buff, &file, 0, simple_buff->length);
+                command_t com;
+                stack_pop (com_stack, &com);
+                //command_set_io (com, file, temp);
+                com->output_string = io_type;
+                com->output = file;
+                stack_push (com_stack, &com);
+                string_clear (simple_buff);//clearing since you used to read file name
             }
             else
-                return NULL;
+                printf("SHOULD NEVER OCCUR");
         }
+    } //else for all non simple characters
+    stack_delete (com_stack);
+    stack_delete (op_stack);
+    string_delete (simple_buff);
+
+    free (com_stack);
+    free (op_stack);
+    free (simple_buff);
+}
+
+    command_stream_t
+make_command_stream (int (*get_next_byte) (void *),
+        void *get_next_byte_argument)
+{
+    //reading every byte
+    string_t raw_string = checked_malloc (sizeof (struct string));
+    string_new (raw_string);
+    char c;
+
+    c = get_next_byte (get_next_byte_argument);
+    while (c != EOF)
+    {
+        string_append_char (raw_string, c);
+        c = get_next_byte (get_next_byte_argument);
+    }
+
+    //cleaning up the string
+    string_t clean_string = checked_malloc (sizeof (struct string));
+    string_new (clean_string);
+    clean_raw_buffer (raw_string, clean_string);
+
+    //creating a new command sream
+    command_stream_t m_tree = checked_malloc (sizeof (struct command_stream));
+    command_stream_new (m_tree);
+    parse_command_tree (clean_string, m_tree); 
+
+    //freeing everything
+    string_delete (raw_string);
+    string_delete (clean_string);
+    free (raw_string);
+    free (clean_string);
+
+    return m_tree;
+}
 
     void
-        delete_command_tree (command_t s)
-        {
-            //there is io to free
-            if (s->io_string != NULL)
-                free(s->io_string);
-            if (s->input != NULL)
-                free(s->input);
-            if (s->output != NULL)
-                free (s->output);
+test_command_stream (command_stream_t t)
+{
+    printf("%d\n", t->n_commands);
+}
 
-            
-            
-            switch(s->type)
-            {
-                unsigned int x;
-                case SIMPLE_COMMAND:
-                x = 0;
-                while (s->u.word[x] != NULL)
-                {
-                    free (s->u.word[x]);
-                    x++;
-                }
-                free (s);
-                break;
-                case SUBSHELL_COMMAND:
-                delete_command_tree (s->u.subshell_command);
-                free (s);
-                break;
-                default:
-                delete_command_tree (s->u.command[0]);
-                delete_command_tree (s->u.command[1]);
-                free (s);
-            }
+    command_t
+read_command_stream (command_stream_t s)
+{
+    if (s->curr_com_index < s->n_commands)
+    { 
+        command_t returning_command;
+        vector_get (s->command_trees, s->curr_com_index, &returning_command);
+        s->curr_com_index++;
+        return returning_command;
+    }
+    else
+        return NULL;
+}
+
+    void
+delete_command_tree (command_t s)
+{
+    //there is io to free
+    if (s->input_string != NULL)
+        free(s->input_string);
+    if (s->output_string != NULL)
+        free(s->output_string);
+    if (s->input != NULL)
+        free(s->input);
+    if (s->output != NULL)
+        free (s->output);
+
+
+
+    switch(s->type)
+    {
+        unsigned int x;
+        case SIMPLE_COMMAND:
+        x = 0;
+        while (s->u.word[x] != NULL)
+        {
+            free (s->u.word[x]);
+            x++;
         }
+        free (s);
+        break;
+        case SUBSHELL_COMMAND:
+        delete_command_tree (s->u.subshell_command);
+        free (s);
+        break;
+        default:
+        delete_command_tree (s->u.command[0]);
+        delete_command_tree (s->u.command[1]);
+        free (s);
+    }
+}
 
 
     void 
-        command_stream_delete (command_stream_t t)
-        {
-            for (unsigned int x = 0; x < t->n_commands; x++)
-            {
-                command_t s;
-                vector_get (t->command_trees, x,&s);
-                delete_command_tree (s); 
-            }
-            vector_delete (t->command_trees);
-        }
+command_stream_delete (command_stream_t t)
+{
+    for (unsigned int x = 0; x < t->n_commands; x++)
+    {
+        command_t s;
+        vector_get (t->command_trees, x,&s);
+        delete_command_tree (s); 
+    }
+    vector_delete (t->command_trees);
+}

@@ -45,13 +45,15 @@ command_indented_print (int indent, command_t c)
     }
 
   if (c->input){
-    printf(c->io_string);
+    printf(c->input_string);
+    printf(" ");
       printf (c->input);
   }
   if (c->output){
     
-    printf(c->io_string);
-      printf (c->output);
+    printf(c->output_string);
+    printf(" ");  
+    printf (c->output);
   }
 }
 void
